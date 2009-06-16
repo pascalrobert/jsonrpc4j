@@ -38,6 +38,8 @@ public class JsonUtilsTest {
         assertNotNull(node);
         TestBean result = JsonUtils.convert(node, TestBean.class);
         assertNotNull(result);
+        TestService ts = JsonUtils.convert(node, TestService.class);
+        assertNotNull(ts);
     }
 
 }

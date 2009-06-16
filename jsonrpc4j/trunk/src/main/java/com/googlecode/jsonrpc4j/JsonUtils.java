@@ -17,6 +17,9 @@ public class JsonUtils {
     public static final JsonFactory FACTORY = new JsonFactory();
     static {
         FACTORY.setCodec(new ObjectMapper());
+        // TODO: create factory using subclass of BeanDeserializerFactory
+        // that overrides createBeanDeserializer to add support for
+        // registering types for interfaces.
     }
     
     /**
