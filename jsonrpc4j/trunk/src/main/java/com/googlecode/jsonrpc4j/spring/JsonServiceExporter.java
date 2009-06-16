@@ -2,29 +2,27 @@ package com.googlecode.jsonrpc4j.spring;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.sf.json.JSONObject;
-
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.remoting.support.RemoteExporter;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.web.HttpRequestHandler;
 
-import com.googlecode.jsonrpc4j.JsonParseException;
-import com.googlecode.jsonrpc4j.JsonRpcError;
+import com.googlecode.jsonrpc4j.JsonEngine;
+import com.googlecode.jsonrpc4j.JsonException;
+import com.googlecode.jsonrpc4j.JsonRpcParamName;
 import com.googlecode.jsonrpc4j.JsonRpcResponse;
-import com.googlecode.jsonrpc4j.JsonRpcUtils;
 
 /**
  * {@link RemoteExporter} that exports services using Json
@@ -48,7 +46,7 @@ public class JsonServiceExporter
     };
     
     private Set<Method> serviceMethods = new HashSet<Method>();
-    private boolean strict = true;
+    private JsonEngine jsonEngine;
 
     /**
      * {@inheritDoc}
@@ -67,118 +65,255 @@ public class JsonServiceExporter
         throws ServletException, 
         IOException {
         
-        // ready the input and output streams
-        InputStream jsonInput   = request.getInputStream();
-        OutputStream jsonOutput = response.getOutputStream();
-        ByteArrayOutputStream jsonOutputBuffer = new ByteArrayOutputStream();
-        
         // ready the request and response
-        JSONObject rpcRequest = null;
-        String id = null;
-        JsonRpcResponse rpcResponse = null;
-        
-        // get content type
-        String contentType = request.getContentType().split(";")[0];
+        Object rpcRequest = null;
+        List<JsonRpcResponse> responses = new ArrayList<JsonRpcResponse>();
         
         // read in the request
         try {
-            rpcRequest = JsonRpcUtils.readRequest(jsonInput);
-            id = JsonRpcUtils.getId(rpcRequest);
-            
-        } catch(JsonParseException e) {
+            rpcRequest = jsonEngine.readJson(request.getInputStream());
+        } catch(JsonException e) {
             response.setStatus(500);
-            rpcResponse = new JsonRpcResponse(null, new JsonRpcError(-32700, 
-                "Parse Error", null), null);
+            responses.add(JsonRpcResponse.createError(-32700, "Parse Error", null, null));
         }
         
-        // make sure we have the correct content type
-        if (strict && 
-            !ArrayUtils.contains(JSONRPC_REQUEST_CONTENT_TYPES, contentType)) {
-            response.setStatus(400);
-            rpcResponse = new JsonRpcResponse(null, new JsonRpcError(-32600, 
-                "Invalid Request (Content-Type Header)", null), id);
-            
-        // check Accept
-        } else if (strict && 
-            (StringUtils.isEmpty(request.getHeader("Accept"))
-                || !ArrayUtils.contains(JSONRPC_REQUEST_CONTENT_TYPES, request.getHeader("Accept")))) {
-            response.setStatus(400);
-            rpcResponse = new JsonRpcResponse(null, new JsonRpcError(-32600, 
-                "Invalid Request (Accept Header)", null), id);
-            
-        // invoke the service method
-        } else if (rpcResponse==null) {
-            rpcResponse = invokeServiceMethod(rpcRequest, response);
-            
+        // invoke
+        try {
+        	responses.addAll(handleRpcRequest(rpcRequest, response));
+        } catch(Exception e) {
+        	throw new ServletException(e);
         }
         
-        // write responses to the buffer
-        jsonOutputBuffer.reset();
-        if (!JsonRpcUtils.isNotification(rpcRequest)) {
-            JsonRpcUtils.writeResponse(rpcResponse, jsonOutputBuffer);
+        // convert response to json
+        Object jsonResponse = null;
+        try {
+	        if (rpcRequest!=null && jsonEngine.isRpcBatchRequest(rpcRequest)) {
+	        	jsonResponse = jsonEngine.objectToJson(responses);
+	        } else if (responses.size()==1) {
+	        	jsonResponse = jsonEngine.objectToJson(responses.get(0));
+	        }
+        } catch(Exception e) {
+        	throw new ServletException(e);
         }
-        response.setContentLength(jsonOutputBuffer.size());
-        response.setContentType(JSONRPC_RESPONSE_CONTENT_TYPE);
-        jsonOutputBuffer.writeTo(jsonOutput);
-        jsonOutput.flush();
+        
+        
+        // write response
+        try {
+	        ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
+	        if (jsonResponse!=null) {
+	        	jsonEngine.writeJson(jsonResponse, outBuffer);
+	        }
+	        response.setContentLength(outBuffer.size());
+	        response.setContentType(JSONRPC_RESPONSE_CONTENT_TYPE);
+	        outBuffer.writeTo(response.getOutputStream());
+	        response.getOutputStream().flush();
+        } catch(Exception e) {
+        	throw new ServletException(e);
+        }
+        
         
     }
     
-    private JsonRpcResponse invokeServiceMethod(
-        JSONObject rpcRequest, HttpServletResponse response) {
-        
-        String id = JsonRpcUtils.getId(rpcRequest);
-        
-        // find the methods
-        Method[] methods = JsonRpcUtils.getPotentialMethods(
-            rpcRequest, serviceMethods.toArray(new Method[0]));
-        if (ArrayUtils.isEmpty(methods)) {
-            response.setStatus(400);
-            return new JsonRpcResponse(null, new JsonRpcError(-32601, 
-                  "Method Not Found: "+JsonRpcUtils.getMethod(rpcRequest), null), id);
+    /**
+     * Handles the given JSON-RPC request, including
+     * batch requests.
+     * @param rpcRequest
+     * @param response
+     * @return
+     * @throws JsonException
+     */
+    private List<JsonRpcResponse> handleRpcRequest(
+    	Object rpcRequest, HttpServletResponse response) 
+    	throws JsonException {
+    	
+    	// ready responses
+    	List<JsonRpcResponse> responses = new ArrayList<JsonRpcResponse>();
+    	
+    	// handle batch
+    	if (jsonEngine.isRpcBatchRequest(rpcRequest)) {
+    		Iterator<Object> rpcRequets = jsonEngine.getRpcBatchIterator(rpcRequest);
+    		while (rpcRequets.hasNext()) {
+    			JsonRpcResponse resp = handleSingleRequest(rpcRequets.next(), response);
+    			if (response!=null) { responses.add(resp); }
+    		}
+    		
+    	// handle single
+    	} else {
+			JsonRpcResponse resp = handleSingleRequest(rpcRequest, response);
+			if (response!=null) { responses.add(resp); }
+    	}
+    	
+    	// return responses
+    	return responses;
+    }
+    
+    /**
+     * Finds methods that match the request with indexed params.
+     * @param methods
+     * @param rpcRequest
+     * @return
+     * @throws JsonException
+     */
+    private MethodAndParams findIndexedMethodAndParams(Set<Method> methods, Object rpcRequest)
+    	throws JsonException {
+    	
+    	MethodAndParams ret = new MethodAndParams();
+    	
+        // loop through each method and check them out
+        for (Method method : methods) {
+        	
+        	// get the types that the method takes
+        	Class<?>[] paramTypes = method.getParameterTypes();
+        	ret.params.clear();
+        		
+    		// check for matching types
+    		boolean typesMatch = true;
+    		for (int i=0; i<paramTypes.length; i++) {
+    			try {
+    				Object jsonParm = jsonEngine.getRpcRequestParameter(rpcRequest, i);
+    				ret.params.add(jsonEngine.jsonToObject(jsonParm, paramTypes[i]));
+    			} catch(Exception e) {
+    				typesMatch = false;
+    				break;
+    			}
+    		}
+    		
+    		// we found our method
+    		if (typesMatch) {
+    			ret.method = method;
+    			break;
+    		}
         }
         
-        // find the correct method
-        Method serviceMethod = null;
-        Object[] parameters = null;
-        for (Method sm : methods) {
-            parameters = JsonRpcUtils.getParameters(rpcRequest, sm);
-            if (parameters!=null) {
-               serviceMethod = sm;
-               break;
-            }
+        // return it
+        return (ret.method!=null) ? ret : null;
+    }
+    
+    /**
+     * Finds methods that match the request with named params.
+     * @param methods
+     * @param rpcRequest
+     * @return
+     * @throws JsonException
+     */
+    private MethodAndParams findNamedMethodAndParams(Set<Method> methods, Object rpcRequest)
+    	throws JsonException {
+    	
+    	MethodAndParams ret = new MethodAndParams();
+    	
+        // loop through each method and check them out
+        for (Method method : methods) {
+        	
+        	// get the types that the method takes
+        	Class<?>[] paramTypes = method.getParameterTypes();
+        	Annotation[][] annotations = method.getParameterAnnotations();
+        	ret.params.clear();
+        		
+    		// check for matching types
+    		boolean typesMatch = true;
+    		for (int i=0; i<paramTypes.length; i++) {
+    			try {
+    				// get the param name
+    				String paramName = getParamNameByAnnotation(annotations[i]);
+    				if (paramName==null) {
+        				typesMatch = false;
+        				break;
+    				}
+    				
+    				Object jsonParm = jsonEngine.getRpcRequestParameter(rpcRequest, paramName);
+    				ret.params.add(jsonEngine.jsonToObject(jsonParm, paramTypes[i]));
+    			} catch(Exception e) {
+    				typesMatch = false;
+    				break;
+    			}
+    		}
+    		
+    		// we found our method
+    		if (typesMatch) {
+    			ret.method = method;
+    			break;
+    		}
         }
+        
+        // return it
+        return (ret.method!=null) ? ret : null;
+    }
+    
+    /**
+     * Returns the annotated param name.
+     * @param annotations
+     * @return
+     */
+    private String getParamNameByAnnotation(Annotation[] annotations) {
+    	for (int i=0; i<annotations.length; i++) {
+    		if (annotations[i] instanceof JsonRpcParamName) {
+    			return((JsonRpcParamName)annotations[i]).value();
+    		}
+    	}
+    	return null;
+    }
+    
+    /**
+     * Handles a single request
+     * @param rpcRequest
+     * @param response
+     * @return
+     * @throws JsonException
+     */
+    private JsonRpcResponse handleSingleRequest(
+    	Object rpcRequest, HttpServletResponse response) 
+    	throws JsonException {
+    	
+    	// get the request method and id
+    	String requestMethod = jsonEngine.getMethodNameFromRpcRequest(rpcRequest);
+    	String requestId = jsonEngine.getIdFromRpcRequest(rpcRequest);
+        
+        // find matching method names
+        Set<Method> methods = new HashSet<Method>();
+        int jsonParameterCount = jsonEngine.getRpcRequestParameterCount(rpcRequest);
+        for (Method method : serviceMethods) {
+        	if (method.getName().equals(requestMethod)
+        		&& method.getParameterTypes().length==jsonParameterCount) {
+        		methods.add(method);
+        	}
+        }
+        if (methods.size()==0) {
+        	return JsonRpcResponse.createError(
+        		-32601, "Method Not Found: "+requestMethod, null, requestId);
+        }
+        
+        // find a method with matching parameter types
+        MethodAndParams invocation = jsonEngine.isRpcRequestParametersIndexed(rpcRequest)
+        	? findIndexedMethodAndParams(methods, rpcRequest)
+        	: findNamedMethodAndParams(methods, rpcRequest);
         
         // bail if we didn't find a method
-        if (serviceMethod==null || parameters==null) {
-            response.setStatus(500);
-            return new JsonRpcResponse(null, new JsonRpcError(-32602, 
-                "Invalid Parameters", null), id);
+        if (invocation==null) {
+        	return JsonRpcResponse.createError(
+            	-32602, "Invalid Parameters", null, requestId);
         }
         
         // invoke the method
-        JsonRpcResponse rpcResponse = null;
         try {
             Object result = ReflectionUtils.invokeMethod(
-                serviceMethod, getService(), parameters);
-            response.setStatus(200);
-            rpcResponse = new JsonRpcResponse(result, null, id);
-            
+            	invocation.method, getService(), invocation.params.toArray(new Object[0]));
+            return JsonRpcResponse.createResponse(result, requestId);
         } catch(Throwable t) {
-            response.setStatus(500);
-            return new JsonRpcResponse(null, new JsonRpcError(-32603, 
-                "Internal Error: "+t.getLocalizedMessage(), null), id);
+        	return JsonRpcResponse.createError(
+                -32603, "Internal Error: "+t.getLocalizedMessage(), null, requestId);
         }
-        
-        // create and return response
-        return rpcResponse;
+    }
+    
+    private class MethodAndParams {
+    	private Method method;
+    	private List<Object> params = new ArrayList<Object>();
     }
 
-    /**
-     * @param strict the strict to set
-     */
-    public void setStrict(boolean strict) {
-        this.strict = strict;
-    }
+	/**
+	 * @param jsonEngine the jsonEngine to set
+	 */
+	public void setJsonEngine(JsonEngine jsonEngine) {
+		this.jsonEngine = jsonEngine;
+	}
     
 }

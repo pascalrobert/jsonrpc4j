@@ -23,6 +23,14 @@ public class JsonRpcResponse {
         this(null, null, null);
     }
     
+    public static JsonRpcResponse createError(int code, String message, Object data, String id) {
+    	return new JsonRpcResponse(null, new JsonRpcError(code, message, data), id);
+    }
+    
+    public static JsonRpcResponse createResponse(Object result, String id) {
+    	return new JsonRpcResponse(result, null, id);
+    }
+    
     /**
      * @return the result
      */

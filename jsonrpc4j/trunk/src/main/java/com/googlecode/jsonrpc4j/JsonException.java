@@ -7,18 +7,18 @@ package com.googlecode.jsonrpc4j;
  *
  */
 @SuppressWarnings("serial")
-public class JsonParseException 
+public class JsonException 
     extends Exception {
     
-    public JsonParseException(String message) {
+    public JsonException(String message) {
         super(message);
     }
     
-    public JsonParseException(Throwable rootCause) {
+    public JsonException(Throwable rootCause) {
         super(rootCause);
     }
     
-    public JsonParseException(String message, Throwable rootCause) {
+    public JsonException(String message, Throwable rootCause) {
         super(message, rootCause);
     }
     
