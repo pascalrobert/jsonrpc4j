@@ -9,7 +9,7 @@ public interface TestService {
     Boolean execBoolean();
     String execString(int param0, long param1);
     String execString(int param0, int param1);
-    JavaBean execJavaBean();
-    JavaBean execJavaBean(int[] testicles);
-    void execJavaBean2(@JsonRpcParamName("bean") JavaBean arg0, @JsonRpcParamName("age") Integer arg1);
+    TestBean execJavaBean();
+    TestBean execJavaBean(int[] testicles);
+    void execJavaBean2(@JsonRpcParamName("bean") TestBean arg0, @JsonRpcParamName("age") Integer arg1);
 }

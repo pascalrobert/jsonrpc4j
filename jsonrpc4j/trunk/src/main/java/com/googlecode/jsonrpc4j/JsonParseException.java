@@ -10,4 +10,16 @@ package com.googlecode.jsonrpc4j;
 public class JsonParseException 
     extends Exception {
     
+    public JsonParseException(String message) {
+        super(message);
+    }
+    
+    public JsonParseException(Throwable rootCause) {
+        super(rootCause);
+    }
+    
+    public JsonParseException(String message, Throwable rootCause) {
+        super(message, rootCause);
+    }
+    
 }

@@ -13,7 +13,7 @@
 
 	<properties>
 		<spring-remoting.version>2.0.8</spring-remoting.version>
-		<json-lib.version>2.2.3</json-lib.version>
+		<jackson.version>1.0.1</jackson.version>
 	</properties>
 
 	<!--
@@ -31,9 +31,9 @@
      | scm configuration
      +-->
 	<scm>
-		<connection>scm:svn:http://jsonrpc4j.googlecode.com/svn/trunk</connection>
-		<developerConnection>scm:svn:https://jsonrpc4j.googlecode.com/svn/trunk</developerConnection>
-		<url>http://jsonrpc4j.googlecode.com/svn/trunk</url>
+		<connection>scm:svn:http://jsonrpc4j.googlecode.com/svn/trunk/jsonrpc4j/</connection>
+		<developerConnection>scm:svn:https://jsonrpc4j.googlecode.com/svn/trunk/jsonrpc4j/</developerConnection>
+		<url>http://jsonrpc4j.googlecode.com/svn/trunk/jsonrpc4j/</url>
 	</scm>
 	
 	<!--
@@ -41,14 +41,14 @@
 	 +-->
 	<distributionManagement>
 		<repository>
-			<id>jsonrpc4j-webdav-repository</id>
+			<id>jsonrpc4j-webdav-maven-repo</id>
 			<name>jsonrpc4j maven repository</name>
 			<url>dav:https://jsonrpc4j.googlecode.com/svn/maven/repo/</url>
 			<uniqueVersion>false</uniqueVersion>
 			<layout>default</layout>
 		</repository>
 		<!-- <site>
-			<id>jsonrpc4j-webdav-repository</id>
+			<id>jsonrpc4j-webdav-maven-repo</id>
 			<name>jsonrpc4j site server</name>
 			<url>dav:https://jsonrpc4j.googlecode.com/svn/maven/site/</url>
 		</site> -->
@@ -107,10 +107,14 @@
 			<version>${spring-remoting.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>net.sf.json-lib</groupId>
-			<artifactId>json-lib</artifactId>
-			<version>${json-lib.version}</version>
-			<classifier>jdk15</classifier>
+			<groupId>org.codehaus.jackson</groupId>
+			<artifactId>jackson-core-lgpl</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.jackson</groupId>
+			<artifactId>jackson-mapper-lgpl</artifactId>
+			<version>${jackson.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>
