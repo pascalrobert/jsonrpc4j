@@ -3,7 +3,6 @@ package com.googlecode.jsonrpc4j;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Abstraction layer for JSON.
