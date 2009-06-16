@@ -53,7 +53,6 @@ public class JsonServiceExporter
     /**
      * {@inheritDoc}
      */
-    @Override
     public void afterPropertiesSet() 
         throws Exception {
         for (Method method : getServiceInterface().getMethods()) {
@@ -64,7 +63,6 @@ public class JsonServiceExporter
     /**
      * {@inheritDoc}
      */
-    @Override
     public void handleRequest(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, 
         IOException {
