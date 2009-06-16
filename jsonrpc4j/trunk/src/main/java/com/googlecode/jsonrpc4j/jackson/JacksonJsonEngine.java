@@ -13,9 +13,10 @@ import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.map.JsonDeserializer;
+import org.codehaus.jackson.map.JsonSerializer;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.deser.StdDeserializerProvider;
-import org.codehaus.jackson.map.ser.StdSerializerProvider;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 
@@ -27,6 +28,7 @@ public class JacksonJsonEngine
 
 	private JsonFactory jsonFactory;
 	private AliasDeserializerFactory aliasDeserializationFactory;
+	private AliasSerializerFactory aliasSerializationFactory;
 	
 	/**
 	 * 
@@ -40,13 +42,15 @@ public class JacksonJsonEngine
 		// create the factory
 		jsonFactory = new JsonFactory();
 		aliasDeserializationFactory = new AliasDeserializerFactory();
+		aliasSerializationFactory = new AliasSerializerFactory();
 		
 		// create the object mapper
-		ObjectMapper mapper = new ObjectMapper(
-			jsonFactory, new StdSerializerProvider(), 
-			new StdDeserializerProvider(aliasDeserializationFactory));
-		jsonFactory.setCodec(mapper);
+		ObjectMapper mapper = new ObjectMapper(jsonFactory);
+		mapper.setDeserializerProvider(new StdDeserializerProvider(aliasDeserializationFactory));
+		mapper.setSerializerFactory(aliasSerializationFactory);
 		
+		// set the codec
+		jsonFactory.setCodec(mapper);
 	}
 
 	/**
@@ -172,8 +176,11 @@ public class JacksonJsonEngine
 	public boolean isNotification(Object json) 
 		throws JsonException {
 		return (!(json instanceof ObjectNode))
-			? false : ((ObjectNode)json).get("id").isNull() 
-				|| ((ObjectNode)json).get("id").isMissingNode();
+			? false : (
+				((ObjectNode)json).get("id")==null
+				|| ((ObjectNode)json).get("id").isNull() 
+				|| ((ObjectNode)json).get("id").isMissingNode()
+			);
 	}
 
 	/**
@@ -212,8 +219,6 @@ public class JacksonJsonEngine
         if (!(json instanceof JsonNode)) {
             throw new JsonException(
                 "Source is not a JsonNode");
-        } else if (json instanceof ObjectNode) {
-        	validateRpcRequest(json);
         }
         
         try {
@@ -226,13 +231,6 @@ public class JacksonJsonEngine
         } catch(Exception e) {
         	throw new JsonException(e);
         }
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public void addTypeAlias(Class<?> fromType, Class<?> toType) {
-		aliasDeserializationFactory.addAlias(fromType, toType);
 	}
 
 	/**
@@ -354,5 +352,34 @@ public class JacksonJsonEngine
         ObjectNode node = (ObjectNode)json;
         return node.get("params").size();
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public void addTypeAlias(Class<?> fromType, Class<?> toType) {
+		aliasDeserializationFactory.addAlias(fromType, toType);
+		aliasSerializationFactory.addAlias(fromType, toType);
+	}
+	
+	/**
+	 * For adding a custom JsonDeserializer.
+	 * @param <T>
+	 * @param forClass
+	 * @param deserializer
+	 */
+	public <T> void addJsonDeserializer(Class<T> forClass, JsonDeserializer<T> deserializer) {
+		aliasDeserializationFactory.addSpecificMapping(forClass, deserializer);
+	}
+	
+	/**
+	 * For adding a custom JsonSerializer.
+	 * @param <T>
+	 * @param forClass
+	 * @param serializer
+	 */
+	public <T> void addJsonSerializer(Class<T> forClass, JsonSerializer<T> serializer) {
+		aliasSerializationFactory.addSpecificMapping(forClass, serializer);
+	}
+	
 
 }

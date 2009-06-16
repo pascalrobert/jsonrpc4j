@@ -9,9 +9,10 @@ package com.googlecode.jsonrpc4j;
  */
 public class JsonRpcResponse {
     
-    private Object result;
-    private JsonRpcError error;
-    private String id;
+	private String jsonrpc		= "2.0";
+    private Object result		= null;
+    private JsonRpcError error	= null;
+    private String id			= null;
     
     public JsonRpcResponse(Object result, JsonRpcError error, String id) {
         this.result = result;
@@ -72,5 +73,19 @@ public class JsonRpcResponse {
     public void setId(String id) {
         this.id = id;
     }
+
+	/**
+	 * @return the jsonrpc
+	 */
+	public String getJsonrpc() {
+		return jsonrpc;
+	}
+
+	/**
+	 * @param jsonrpc the jsonrpc to set
+	 */
+	public void setJsonrpc(String jsonrpc) {
+		this.jsonrpc = jsonrpc;
+	}
     
 }
