@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.ServletException;
@@ -45,7 +47,8 @@ public class JsonServiceExporter
         "application/jsonrequest"
     };
     
-    private Set<Method> serviceMethods = new HashSet<Method>();
+    private Set<Method> serviceInterfaceMethods = new HashSet<Method>();
+    private Map<Method, Method> serviceImplMethods = new HashMap<Method, Method>();
     private JsonEngine jsonEngine;
 
     /**
@@ -54,7 +57,9 @@ public class JsonServiceExporter
     public void afterPropertiesSet() 
         throws Exception {
         for (Method method : getServiceInterface().getMethods()) {
-            serviceMethods.add(method);
+            serviceInterfaceMethods.add(method);
+            serviceImplMethods.put(method, getService().getClass().getMethod(
+            	method.getName(), method.getParameterTypes()));
         }
     }
     
@@ -78,10 +83,12 @@ public class JsonServiceExporter
         }
         
         // invoke
-        try {
-        	responses.addAll(handleRpcRequest(rpcRequest, response));
-        } catch(Exception e) {
-        	throw new ServletException(e);
+        if (rpcRequest!=null) {
+	        try {
+	        	responses.addAll(handleRpcRequest(rpcRequest, response));
+	        } catch(Exception e) {
+	        	throw new ServletException(e);
+	        }
         }
         
         // convert response to json
@@ -166,7 +173,7 @@ public class JsonServiceExporter
         // find matching method names
         Set<Method> methods = new HashSet<Method>();
         int jsonParameterCount = jsonEngine.getRpcRequestParameterCount(rpcRequest);
-        for (Method method : serviceMethods) {
+        for (Method method : serviceInterfaceMethods) {
         	if (method.getName().equals(requestMethod)
         		&& method.getParameterTypes().length==jsonParameterCount) {
         		methods.add(method);
@@ -260,7 +267,8 @@ public class JsonServiceExporter
         	
         	// get the types that the method takes
         	Class<?>[] paramTypes = method.getParameterTypes();
-        	Annotation[][] annotations = method.getParameterAnnotations();
+        	Annotation[][] interfaceAnnotations = method.getParameterAnnotations();
+        	Annotation[][] serviceAnnotations = serviceImplMethods.get(method).getParameterAnnotations();
         	ret.params.clear();
         		
     		// check for matching types
@@ -268,7 +276,10 @@ public class JsonServiceExporter
     		for (int i=0; i<paramTypes.length; i++) {
     			try {
     				// get the param name
-    				String paramName = getParamNameByAnnotation(annotations[i]);
+    				String paramName = getParamNameByAnnotation(serviceAnnotations[i]);
+    				if (paramName==null) {
+    					paramName = getParamNameByAnnotation(interfaceAnnotations[i]);
+    				}
     				if (paramName==null) {
         				typesMatch = false;
         				break;
