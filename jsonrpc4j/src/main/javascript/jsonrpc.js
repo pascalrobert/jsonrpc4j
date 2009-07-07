@@ -6,7 +6,8 @@ var JSONRPC = {
 		
 	config: {
 		asyncAjaxPost: function(options) {
-			throw "No registerd hook for JSONRPC.config.asyncAjaxPost";
+			JSONRPC.config.errorMessage(
+				"No registerd hook for JSONRPC.config.asyncAjaxPost");
 		},
 		errorMessage: function(msg) {
 			alert(msg);
