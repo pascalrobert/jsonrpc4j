@@ -2,6 +2,8 @@
 
 var JSONRPC = {
 	
+	_lastId: 0,
+		
 	config: {
 		asyncAjaxPost: function(options) {
 			throw "No registerd hook for JSONRPC.config.asyncAjaxPost";
@@ -17,12 +19,19 @@ var JSONRPC = {
 			"Call failed to "+options.url+"::"+options.rpcRequest.method);
 	},
 	
-	_handleRpcResponse: function(response) {
-		
+	_handleRpcResponse: function(response, successCallback, failureCallback) {
+		if (response.error) {
+			failureCallback(response.id, response.error);
+		} else if (response.result) {
+			successCallback(response.id, response.result);
+		} else{
+			successCallback(response.id);
+		}
 	},
 	
 	_generateId: function() {
-		
+		_lastId++;
+		return _lastId;
 	},
 	
 	call: function(url, method, id, params, successCallback, failureCallback) {
@@ -87,9 +96,9 @@ var JSONRPC = {
 					if (!transport.responseText.isJSON()) {
 						JSONRPC._invalidResponse(options);
 					} else {
-						var response = transport.responseText.evalJSON(true);
 						JSONRPC._handleRpcResponse(
-							response, options.successCallback, options.failureCallback);
+							transport.responseText.evalJSON(true), 
+							options.successCallback, options.failureCallback);
 					}
 				},
 				onFailure: function(transport) {
