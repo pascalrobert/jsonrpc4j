@@ -31,8 +31,8 @@ var JSONRPC = {
 	},
 	
 	_generateId: function() {
-		_lastId++;
-		return _lastId;
+		JSONRPC._lastId++;
+		return JSONRPC._lastId;
 	},
 	
 	call: function(url, method, id, params, successCallback, failureCallback) {
