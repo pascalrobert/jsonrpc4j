@@ -15,6 +15,10 @@ var JSONRPC = {
 		}
 	},
 	
+	_isDefined: function(variable) {
+		return (typeof(eval("Prototype")) != "undefined");
+	},
+	
 	_invalidResponse: function(options) {
 		JSONRPC.config.errorMessage(
 			"Call failed to "+options.url+"::"+options.rpcRequest.method);
@@ -111,4 +115,4 @@ var JSONRPC = {
 };
 
 // auto register Prototype usage
-if (Prototype) { JSONRPC.registerPrototypeJs(); }
+if (JSONRPC._isDefined("Prototype")) { JSONRPC.registerPrototypeJs(); }
