@@ -111,6 +111,4 @@ var JSONRPC = {
 };
 
 // auto register Prototype usage
-if (Prototype && Ajax && Ajax.Request) {
-	JSONRPC.registerPrototypeJs();
-}
+if (Prototype) { JSONRPC.registerPrototypeJs(); }
