@@ -201,6 +201,10 @@ public class JsonServiceExporter
             	invocation.method, getService(), invocation.params.toArray(new Object[0]));
             return (!jsonEngine.isNotification(rpcRequest))
             	? JsonRpcResponse.createResponse(result, requestId) : null;
+        } catch(JsonServiceException jse) {
+        	return JsonRpcResponse.createError(
+                -jse.getCode(), jse.getMessage(), jse.getData(), requestId);
+        	
         } catch(Throwable t) {
         	return JsonRpcResponse.createError(
                 -32603, "Internal Error: "+t.getLocalizedMessage(), null, requestId);
