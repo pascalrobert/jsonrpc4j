@@ -3,6 +3,7 @@ package com.googlecode.jsonrpc4j;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Abstraction layer for JSON.
@@ -49,6 +50,12 @@ public interface JsonEngine {
 	 * @throws JsonException
 	 */
 	boolean isRpcRequestParametersIndexed(Object json)
+		throws JsonException;
+	
+	JsonRpcError getJsonErrorFromResponse(Object jsonResponse)
+		throws JsonException;
+	
+	Object getJsonResultFromResponse(Object jsonResponse)
 		throws JsonException;
 	
 	/**
@@ -133,5 +140,11 @@ public interface JsonEngine {
 		throws JsonException;
 	
 	Object getRpcRequestParameter(Object json, String name)
+		throws JsonException;
+	
+	Object createRpcRequest(String methodName, Object[] arguments)
+		throws JsonException;
+	
+	Object createRpcRequest(String methodName, Map<String, Object> arguments)
 		throws JsonException;
 }

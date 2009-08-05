@@ -2,11 +2,14 @@ package com.googlecode.jsonrpc4j.jackson;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
@@ -18,10 +21,12 @@ import org.codehaus.jackson.map.JsonSerializer;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.deser.StdDeserializerProvider;
 import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
 
 import com.googlecode.jsonrpc4j.JsonEngine;
 import com.googlecode.jsonrpc4j.JsonException;
+import com.googlecode.jsonrpc4j.JsonRpcError;
 
 public class JacksonJsonEngine 
 	implements JsonEngine {
@@ -356,11 +361,93 @@ public class JacksonJsonEngine
 	/**
 	 * {@inheritDoc}
 	 */
+	public JsonRpcError getJsonErrorFromResponse(Object jsonResponse) 
+		throws JsonException {
+		
+		// make sure it's what we expect
+        if (!(jsonResponse instanceof ObjectNode)) {
+            throw new JsonException(
+                "Source is not a ObjectNode");
+        }
+        
+		return jsonToObject(
+			((ObjectNode)jsonResponse).get("error"), JsonRpcError.class);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public Object getJsonResultFromResponse(Object jsonResponse) 
+		throws JsonException {
+		
+		// make sure it's what we expect
+        if (!(jsonResponse instanceof ObjectNode)) {
+            throw new JsonException(
+                "Source is not a ObjectNode");
+        }
+        
+		return ((ObjectNode)jsonResponse).get("result");
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
 	public void addTypeAlias(Class<?> fromType, Class<?> toType) {
 		aliasDeserializationFactory.addAlias(fromType, toType);
 		aliasSerializationFactory.addAlias(fromType, toType);
 	}
 	
+	/**
+	 * Writes common fields to the generator.
+	 * @param gen the generator
+	 * @param methodName the methodName
+	 * @throws IOException on error
+	 */
+	private void writeCommonRpcRequestFields(ObjectNode rpcRequest, String methodName) {
+		rpcRequest.put("jsonrpc", "2.0");
+		rpcRequest.put("method", methodName);
+		rpcRequest.put("id", UUID.randomUUID().toString());
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public Object createRpcRequest(String methodName, Object[] arguments) 
+		throws JsonException {
+		
+		// create object and write common fields
+		ObjectNode rpcRequest = new ObjectNode(JsonNodeFactory.instance);
+		writeCommonRpcRequestFields(rpcRequest, methodName);
+		
+		// add indexed parameters
+		ArrayNode params = rpcRequest.putArray("params");
+		for (int i=0; i<arguments.length; i++) {
+			params.addPOJO(arguments[i]);
+		}
+		
+		// return it
+		return rpcRequest;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public Object createRpcRequest(
+		String methodName, Map<String, Object> arguments) {
+		
+		// create object and write common fields
+		ObjectNode rpcRequest = new ObjectNode(JsonNodeFactory.instance);
+		writeCommonRpcRequestFields(rpcRequest, methodName);
+		
+		// add named parameters
+		ObjectNode params = rpcRequest.putObject("params");
+		for (String name : arguments.keySet()) {
+			params.putPOJO(name, arguments.get(name));
+		}
+		
+		// return it
+		return rpcRequest;
+	}
 	/**
 	 * For adding a custom JsonDeserializer.
 	 * @param <T>
@@ -381,5 +468,4 @@ public class JacksonJsonEngine
 		aliasSerializationFactory.addSpecificMapping(forClass, serializer);
 	}
 	
-
 }
