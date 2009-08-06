@@ -95,7 +95,7 @@ public class JsonProxyFactoryBean
 		for (String header : extraHttpHeaders.keySet()) {
 			method.addRequestHeader(header, extraHttpHeaders.get(header));
 		}
-		method.setRequestHeader("User-Agent", this.getClass().getName());
+		//method.setRequestHeader("User-Agent", this.getClass().getName());
 		method.setRequestHeader("Content-Type", "application/json-rpc");
 		method.setRequestEntity(new ByteArrayRequestEntity(
 			out.toByteArray(), "application/json-rpc"));
