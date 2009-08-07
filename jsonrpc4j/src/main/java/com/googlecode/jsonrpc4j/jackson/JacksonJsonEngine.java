@@ -315,7 +315,7 @@ public class JacksonJsonEngine
 	/**
 	 * {@inheritDoc}
 	 */
-	public Object getRpcRequestParameter(Object json, int index)
+	public Object getParameterFromRpcRequest(Object json, int index)
 		throws JsonException {
 		
 		// make sure it's what we expect
@@ -330,7 +330,7 @@ public class JacksonJsonEngine
 	/**
 	 * {@inheritDoc}
 	 */
-	public Object getRpcRequestParameter(Object json, String name)
+	public Object getParameterFromRpcRequest(Object json, String name)
 		throws JsonException {
 		
 		// make sure it's what we expect
@@ -345,7 +345,7 @@ public class JacksonJsonEngine
 	/**
 	 * {@inheritDoc}
 	 */
-	public int getRpcRequestParameterCount(Object json) 
+	public int getParameterCountFromRpcRequest(Object json) 
 		throws JsonException {
 		
 		// make sure it's what we expect

@@ -6,8 +6,9 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Abstraction layer for JSON.
- * @author bdilley
+ * Abstraction layer for JSON.  This is kinda dirty :).  I'm not sure if it's
+ * worth it - but it does keep the underlying JSON implementation abstracted.
+ * @author brian.dilley@gmail.com
  *
  */
 public interface JsonEngine {
@@ -133,13 +134,13 @@ public interface JsonEngine {
 	String getIdFromRpcRequest(Object json)
 		throws JsonException;
 	
-	int getRpcRequestParameterCount(Object json)
+	int getParameterCountFromRpcRequest(Object json)
 		throws JsonException;
 	
-	Object getRpcRequestParameter(Object json, int index)
+	Object getParameterFromRpcRequest(Object json, int index)
 		throws JsonException;
 	
-	Object getRpcRequestParameter(Object json, String name)
+	Object getParameterFromRpcRequest(Object json, String name)
 		throws JsonException;
 	
 	Object createRpcRequest(String methodName, Object[] arguments)

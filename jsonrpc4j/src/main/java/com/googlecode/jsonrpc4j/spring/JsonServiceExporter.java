@@ -172,7 +172,7 @@ public class JsonServiceExporter
         
         // find matching method names
         Set<Method> methods = new HashSet<Method>();
-        int jsonParameterCount = jsonEngine.getRpcRequestParameterCount(rpcRequest);
+        int jsonParameterCount = jsonEngine.getParameterCountFromRpcRequest(rpcRequest);
         for (Method method : serviceInterfaceMethods) {
         	if (method.getName().equals(requestMethod)
         		&& method.getParameterTypes().length==jsonParameterCount) {
@@ -235,7 +235,7 @@ public class JsonServiceExporter
     		boolean typesMatch = true;
     		for (int i=0; i<paramTypes.length; i++) {
     			try {
-    				Object jsonParm = jsonEngine.getRpcRequestParameter(rpcRequest, i);
+    				Object jsonParm = jsonEngine.getParameterFromRpcRequest(rpcRequest, i);
     				ret.params.add(jsonEngine.jsonToObject(jsonParm, paramTypes[i]));
     			} catch(Exception e) {
     				typesMatch = false;
@@ -289,7 +289,7 @@ public class JsonServiceExporter
         				break;
     				}
     				
-    				Object jsonParm = jsonEngine.getRpcRequestParameter(rpcRequest, paramName);
+    				Object jsonParm = jsonEngine.getParameterFromRpcRequest(rpcRequest, paramName);
     				ret.params.add(jsonEngine.jsonToObject(jsonParm, paramTypes[i]));
     			} catch(Exception e) {
     				typesMatch = false;
