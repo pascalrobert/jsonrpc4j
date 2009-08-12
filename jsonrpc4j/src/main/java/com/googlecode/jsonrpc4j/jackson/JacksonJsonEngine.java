@@ -1,6 +1,7 @@
 package com.googlecode.jsonrpc4j.jackson;
 
 import java.io.ByteArrayInputStream;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,9 +21,12 @@ import org.codehaus.jackson.map.JsonDeserializer;
 import org.codehaus.jackson.map.JsonSerializer;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.deser.StdDeserializerProvider;
+import org.codehaus.jackson.map.type.TypeFactory;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
+import org.codehaus.jackson.type.JavaType;
+import org.codehaus.jackson.type.TypeReference;
 
 import com.googlecode.jsonrpc4j.JsonEngine;
 import com.googlecode.jsonrpc4j.JsonException;
@@ -62,6 +66,7 @@ public class JacksonJsonEngine
      * TODO: find a better way of going from JsonNode to Object.
 	 * {@inheritDoc}
 	 */
+    @SuppressWarnings("unchecked")
 	public <T> T jsonToObject(Object json, Class<T> valueType) 
 		throws JsonException {
 		
@@ -71,6 +76,9 @@ public class JacksonJsonEngine
                 "Source is not a JsonNode");
         }
         
+        // get java type
+        JavaType jt = TypeFactory.fromClass(valueType);
+        
         try {
         	// convert to json string
 	        ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -79,10 +87,14 @@ public class JacksonJsonEngine
 	        generator.writeTree(JsonNode.class.cast(json));
 	        generator.flush();
 	        
-	        // convert to type
+	        // create parser
 	        JsonParser parser = jsonFactory.createJsonParser(
-	            new ByteArrayInputStream(out.toByteArray()));
-	        return parser.readValueAs(valueType);
+	        	new ByteArrayInputStream(out.toByteArray()));
+	        
+	        // parse it
+	        return (jt.isContainerType() || jt.isFullyTyped())
+	        	? (T)parser.readValueAs(new TypeReference<T>() { })
+	        	: parser.readValueAs(valueType);
 	        
         } catch(Exception e) {
         	throw new JsonException(e);
