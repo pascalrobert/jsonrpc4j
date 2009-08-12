@@ -7,14 +7,14 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.googlecode</groupId>
 	<artifactId>jsonrpc4j</artifactId>
-	<version>0.2-SNAPSHOT</version>
+	<version>0.3-SNAPSHOT</version>
 	<name>JSON-RPC for java</name>
 	<packaging>jar</packaging>
 	<url>http://code.google.com/p/jsonrpc4j/</url>
 
 	<properties>
 		<spring-remoting.version>2.0.8</spring-remoting.version>
-		<jackson.version>1.0.1</jackson.version>
+		<jackson.version>1.2.0</jackson.version>
 	</properties>
 
 	<!--
