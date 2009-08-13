@@ -113,7 +113,7 @@ public class JacksonJsonEngine
 	        generator.flush();
 	        
 	        // create parser
-	        return objectMapper.readValue(
+	        return (T)objectMapper.readValue(
 	        	new ByteArrayInputStream(out.toByteArray()),
 	        	TypeFactory.fromType(valueType));
 	        
