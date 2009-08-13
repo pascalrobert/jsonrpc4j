@@ -1,6 +1,7 @@
 package com.googlecode.jsonrpc4j.spring;
 
 import java.io.ByteArrayOutputStream;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -122,9 +123,10 @@ public class JsonProxyFactoryBean
 		}
 		
 		// read result
-		if (invocation.getMethod().getReturnType()!=null) {
+		if (invocation.getMethod().getGenericReturnType()!=null) {
 			Object result = jsonEngine.getJsonResultFromResponse(rpcResponse);
-			return jsonEngine.jsonToObject(result, invocation.getMethod().getReturnType());
+			return jsonEngine.jsonToObject(
+				result, invocation.getMethod().getGenericReturnType());
 		} else {
 			return null;
 		}

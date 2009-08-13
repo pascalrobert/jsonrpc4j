@@ -2,10 +2,12 @@ package com.googlecode.jsonrpc4j.jackson;
 
 import java.io.ByteArrayInputStream;
 
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -21,6 +23,7 @@ import org.codehaus.jackson.map.JsonDeserializer;
 import org.codehaus.jackson.map.JsonSerializer;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.deser.StdDeserializerProvider;
+import org.codehaus.jackson.map.type.TypeFactory;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
@@ -33,6 +36,7 @@ public class JacksonJsonEngine
 	implements JsonEngine {
 
 	private JsonFactory jsonFactory;
+	private ObjectMapper objectMapper;
 	private AliasDeserializerFactory aliasDeserializationFactory;
 	private AliasSerializerFactory aliasSerializationFactory;
 	
@@ -51,12 +55,12 @@ public class JacksonJsonEngine
 		aliasSerializationFactory = new AliasSerializerFactory();
 		
 		// create the object mapper
-		ObjectMapper mapper = new ObjectMapper(jsonFactory);
-		mapper.setDeserializerProvider(new StdDeserializerProvider(aliasDeserializationFactory));
-		mapper.setSerializerFactory(aliasSerializationFactory);
+		objectMapper = new ObjectMapper(jsonFactory);
+		objectMapper.setDeserializerProvider(new StdDeserializerProvider(aliasDeserializationFactory));
+		objectMapper.setSerializerFactory(aliasSerializationFactory);
 		
 		// set the codec
-		jsonFactory.setCodec(mapper);
+		jsonFactory.setCodec(objectMapper);
 	}
 
 	/**
@@ -81,16 +85,41 @@ public class JacksonJsonEngine
 	        generator.flush();
 	        
 	        // create parser
-	        JsonParser parser = jsonFactory.createJsonParser(
-	        	new ByteArrayInputStream(out.toByteArray()));
-	        
-	        // parse it
-	        return parser.readValueAs(valueType);
+	        return objectMapper.readValue(
+	        	new ByteArrayInputStream(out.toByteArray()),
+	        	valueType);
 	        
         } catch(Exception e) {
         	throw new JsonException(e);
         }
         
+	}
+
+	public <T> T jsonToObject(Object json, Type valueType) 
+		throws JsonException {
+		
+		// make sure it's what we expect
+        if (!(json instanceof JsonNode)) {
+            throw new JsonException(
+                "Source is not a JsonNode");
+        }
+        
+        try {
+        	// convert to json string
+	        ByteArrayOutputStream out = new ByteArrayOutputStream();
+	        JsonGenerator generator = jsonFactory.createJsonGenerator(
+	            out, JsonEncoding.UTF8);
+	        generator.writeTree(JsonNode.class.cast(json));
+	        generator.flush();
+	        
+	        // create parser
+	        return objectMapper.readValue(
+	        	new ByteArrayInputStream(out.toByteArray()),
+	        	TypeFactory.fromType(valueType));
+	        
+        } catch(Exception e) {
+        	throw new JsonException(e);
+        }
 	}
 
 	/**

@@ -1,7 +1,9 @@
 package com.googlecode.jsonrpc4j;
 
 import java.io.InputStream;
+
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -88,6 +90,17 @@ public interface JsonEngine {
 	 * @throws JsonException
 	 */
 	<T> T jsonToObject(Object json, Class<T> valueType)
+		throws JsonException;
+	
+	/**
+	 * Converts a JSON to the given type.
+	 * @param <T>
+	 * @param json
+	 * @param valueType
+	 * @return
+	 * @throws JsonException
+	 */
+	<T> T jsonToObject(Object json, Type valueType)
 		throws JsonException;
 	
 	/**
