@@ -16,8 +16,13 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.remoting.support.RemoteExporter;
+import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.web.HttpRequestHandler;
 
@@ -38,7 +43,8 @@ import com.googlecode.jsonrpc4j.JsonRpcResponse;
 public class JsonServiceExporter 
     extends RemoteExporter 
     implements HttpRequestHandler,
-    InitializingBean {
+    InitializingBean,
+    ApplicationContextAware {
     
     public static final String JSONRPC_RESPONSE_CONTENT_TYPE = "application/json-rpc";
     public static final String[] JSONRPC_REQUEST_CONTENT_TYPES = {
@@ -50,6 +56,7 @@ public class JsonServiceExporter
     private Set<Method> serviceInterfaceMethods = new HashSet<Method>();
     private Map<Method, Method> serviceImplMethods = new HashMap<Method, Method>();
     private JsonEngine jsonEngine;
+    private ApplicationContext applicationContext;
 
     /**
      * {@inheritDoc}
@@ -61,6 +68,14 @@ public class JsonServiceExporter
             serviceImplMethods.put(method, getService().getClass().getMethod(
             	method.getName(), method.getParameterTypes()));
         }
+		if (jsonEngine==null) {
+			jsonEngine = (JsonEngine)applicationContext.getBean("jsonEngine");
+		}
+		if (jsonEngine==null) {
+			jsonEngine = (JsonEngine)BeanFactoryUtils.beanOfTypeIncludingAncestors(
+				applicationContext, JsonEngine.class);
+		}
+		Assert.notNull(jsonEngine, "jsonEngine not specified and couldn't be found");
     }
     
     /**
@@ -333,5 +348,13 @@ public class JsonServiceExporter
     	private Method method;
     	private List<Object> params = new ArrayList<Object>();
     }
+
+    /**
+     * {@inheritDoc}
+     */
+	public void setApplicationContext(ApplicationContext applicationContext)
+		throws BeansException {
+		this.applicationContext = applicationContext;
+	}
     
 }

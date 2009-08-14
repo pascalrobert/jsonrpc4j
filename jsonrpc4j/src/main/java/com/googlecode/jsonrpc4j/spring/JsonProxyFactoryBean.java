@@ -2,6 +2,7 @@ package com.googlecode.jsonrpc4j.spring;
 
 import java.io.ByteArrayOutputStream;
 
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -15,9 +16,14 @@ import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.remoting.support.UrlBasedRemoteAccessor;
+import org.springframework.util.Assert;
 
 import com.googlecode.jsonrpc4j.JsonEngine;
 import com.googlecode.jsonrpc4j.JsonRpcError;
@@ -29,12 +35,14 @@ public class JsonProxyFactoryBean
 	extends UrlBasedRemoteAccessor 
 	implements MethodInterceptor,
 	InitializingBean,
-	FactoryBean {
+	FactoryBean,
+	ApplicationContextAware {
 	
 	private Object proxyObject = null;
 	private HttpClient httpClient = null;
 	private JsonEngine jsonEngine = null;
 	private Map<String, String> extraHttpHeaders = new HashMap<String, String>();
+	private ApplicationContext applicationContext;
 	
 	/**
 	 * {@inheritDoc}
@@ -46,6 +54,14 @@ public class JsonProxyFactoryBean
 		if (httpClient==null) {
 			httpClient = new HttpClient(new MultiThreadedHttpConnectionManager());
 		}
+		if (jsonEngine==null) {
+			jsonEngine = (JsonEngine)applicationContext.getBean("jsonEngine");
+		}
+		if (jsonEngine==null) {
+			jsonEngine = (JsonEngine)BeanFactoryUtils.beanOfTypeIncludingAncestors(
+				applicationContext, JsonEngine.class);
+		}
+		Assert.notNull(jsonEngine, "jsonEngine not specified and couldn't be found");
 	}
 
 	/**
@@ -195,6 +211,11 @@ public class JsonProxyFactoryBean
 	 */
 	public void setExtraHttpHeaders(Map<String, String> extraHttpHeaders) {
 		this.extraHttpHeaders = extraHttpHeaders;
+	}
+
+	public void setApplicationContext(ApplicationContext applicationContext)
+		throws BeansException {
+		this.applicationContext = applicationContext;
 	}
 
 }
