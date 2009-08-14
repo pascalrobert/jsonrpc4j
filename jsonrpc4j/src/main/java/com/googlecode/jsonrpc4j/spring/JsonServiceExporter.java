@@ -68,10 +68,10 @@ public class JsonServiceExporter
             serviceImplMethods.put(method, getService().getClass().getMethod(
             	method.getName(), method.getParameterTypes()));
         }
-		if (jsonEngine==null) {
+		if (jsonEngine==null && applicationContext!=null) {
 			jsonEngine = (JsonEngine)applicationContext.getBean("jsonEngine");
 		}
-		if (jsonEngine==null) {
+		if (jsonEngine==null && applicationContext!=null) {
 			jsonEngine = (JsonEngine)BeanFactoryUtils.beanOfTypeIncludingAncestors(
 				applicationContext, JsonEngine.class);
 		}

@@ -3,6 +3,7 @@ package com.googlecode.jsonrpc4j.spring;
 import java.io.ByteArrayOutputStream;
 
 
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -21,7 +22,6 @@ import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.remoting.support.UrlBasedRemoteAccessor;
 import org.springframework.util.Assert;
 
@@ -35,8 +35,7 @@ public class JsonProxyFactoryBean
 	extends UrlBasedRemoteAccessor 
 	implements MethodInterceptor,
 	InitializingBean,
-	FactoryBean,
-	ApplicationContextAware {
+	FactoryBean {
 	
 	private Object proxyObject = null;
 	private HttpClient httpClient = null;
@@ -50,14 +49,18 @@ public class JsonProxyFactoryBean
 	@Override
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
+		
+		// create proxy
 		proxyObject = ProxyFactory.getProxy(getServiceInterface(), this);
 		if (httpClient==null) {
 			httpClient = new HttpClient(new MultiThreadedHttpConnectionManager());
 		}
-		if (jsonEngine==null) {
+		
+		// try to find a JsonEngine
+		if (jsonEngine==null && applicationContext!=null) {
 			jsonEngine = (JsonEngine)applicationContext.getBean("jsonEngine");
 		}
-		if (jsonEngine==null) {
+		if (jsonEngine==null && applicationContext!=null) {
 			jsonEngine = (JsonEngine)BeanFactoryUtils.beanOfTypeIncludingAncestors(
 				applicationContext, JsonEngine.class);
 		}
