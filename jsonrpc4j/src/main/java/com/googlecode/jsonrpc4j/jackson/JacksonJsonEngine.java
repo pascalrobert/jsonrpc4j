@@ -95,6 +95,7 @@ public class JacksonJsonEngine
         
 	}
 
+	@SuppressWarnings("unchecked")
 	public <T> T jsonToObject(Object json, Type valueType) 
 		throws JsonException {
 		
@@ -454,7 +455,7 @@ public class JacksonJsonEngine
 		// add indexed parameters
 		ArrayNode params = rpcRequest.putArray("params");
 		for (int i=0; i<arguments.length; i++) {
-			params.addPOJO(arguments[i]);
+			params.add((JsonNode)objectToJson(arguments[i]));
 		}
 		
 		// return it
@@ -465,7 +466,8 @@ public class JacksonJsonEngine
 	 * {@inheritDoc}
 	 */
 	public Object createRpcRequest(
-		String methodName, Map<String, Object> arguments) {
+		String methodName, Map<String, Object> arguments) 
+		throws JsonException {
 		
 		// create object and write common fields
 		ObjectNode rpcRequest = new ObjectNode(JsonNodeFactory.instance);
@@ -474,7 +476,7 @@ public class JacksonJsonEngine
 		// add named parameters
 		ObjectNode params = rpcRequest.putObject("params");
 		for (String name : arguments.keySet()) {
-			params.putPOJO(name, arguments.get(name));
+			params.put(name, (JsonNode)objectToJson(arguments.get(name)));
 		}
 		
 		// return it
