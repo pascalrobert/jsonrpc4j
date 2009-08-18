@@ -1,7 +1,7 @@
 package com.googlecode.jsonrpc4j;
 
 /**
- * Thrown on error (TODO: make this comment un-suck)
+ * An {@link Exception} that contanis a {@link JsonRpcError}.
  * 
  * @author brian.dilley@gmail.com
  *
