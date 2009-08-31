@@ -16,6 +16,8 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
@@ -36,6 +38,8 @@ public class JsonProxyFactoryBean
 	implements MethodInterceptor,
 	InitializingBean,
 	FactoryBean {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(JsonProxyFactoryBean.class);
 	
 	private Object proxyObject = null;
 	private HttpClient httpClient = null;
@@ -125,10 +129,11 @@ public class JsonProxyFactoryBean
 		try {
 			httpClient.executeMethod(method);
 			if (method.getStatusCode()>=300) {
-				throw new HttpException(					
-					"Did not receive successful HTTP response: status code = " 
+				String msg = "Did not receive successful HTTP response: status code = " 
 					+ method.getStatusCode() 
-					+", status message = [" + method.getStatusText() + "]");
+					+", status message = [" + method.getStatusText() + "]";
+				LOGGER.error(msg);
+				throw new HttpException(msg);
 			}
 			rpcResponse = jsonEngine.readJson(method.getResponseBodyAsStream());
 		} finally {
@@ -138,6 +143,8 @@ public class JsonProxyFactoryBean
 		// check for errors
 		JsonRpcError error = jsonEngine.getJsonErrorFromResponse(rpcResponse);
 		if (error!=null) {
+			LOGGER.error("Error returned from service: "
+				+error.getCode()+":"+error.getMessage());
 			throw new JsonRpcErrorException(error);
 		}
 		

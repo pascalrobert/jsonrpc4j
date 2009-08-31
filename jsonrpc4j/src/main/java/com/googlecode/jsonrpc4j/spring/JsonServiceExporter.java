@@ -1,6 +1,7 @@
 package com.googlecode.jsonrpc4j.spring;
 
 import java.io.ByteArrayOutputStream;
+
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -16,6 +17,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -46,6 +49,8 @@ public class JsonServiceExporter
     InitializingBean,
     ApplicationContextAware {
     
+	private static final Logger LOGGER = LoggerFactory.getLogger(JsonServiceExporter.class);
+	
     public static final String JSONRPC_RESPONSE_CONTENT_TYPE = "application/json-rpc";
     public static final String[] JSONRPC_REQUEST_CONTENT_TYPES = {
         "application/json-rpc",
@@ -93,6 +98,7 @@ public class JsonServiceExporter
         try {
             rpcRequest = jsonEngine.readJson(request.getInputStream());
         } catch(JsonException e) {
+        	LOGGER.error("Unable to read JSON-RPC request(s) from client");
             response.setStatus(500);
             responses.add(JsonRpcResponse.createError(-32700, "Parse Error", null, null));
         }
@@ -195,6 +201,7 @@ public class JsonServiceExporter
         	}
         }
         if (methods.size()==0) {
+        	LOGGER.error("Method not found: "+requestMethod);
         	return JsonRpcResponse.createError(
         		-32601, "Method Not Found: "+requestMethod, null, requestId);
         }
@@ -206,6 +213,7 @@ public class JsonServiceExporter
         
         // bail if we didn't find a method
         if (invocation==null) {
+        	LOGGER.error("Invalid parameters to method: "+requestMethod);
         	return JsonRpcResponse.createError(
             	-32602, "Invalid Parameters", null, requestId);
         }
@@ -217,10 +225,12 @@ public class JsonServiceExporter
             return (!jsonEngine.isNotification(rpcRequest))
             	? JsonRpcResponse.createResponse(result, requestId) : null;
         } catch(JsonServiceException jse) {
+        	LOGGER.error("JsonServiceException while invoking service method", jse);
         	return JsonRpcResponse.createError(
                 -jse.getCode(), jse.getMessage(), jse.getData(), requestId);
         	
         } catch(Throwable t) {
+        	LOGGER.error("Throwable while invoking service method", t);
         	return JsonRpcResponse.createError(
                 -32603, "Internal Error: "+t.getLocalizedMessage(), null, requestId);
         }
