@@ -220,6 +220,7 @@ public class JsonServiceExporter
         
         // invoke the method
         try {
+        	LOGGER.debug("Invoking service method: "+invocation.method.getName());
             Object result = ReflectionUtils.invokeMethod(
             	invocation.method, getService(), invocation.params.toArray(new Object[0]));
             return (!jsonEngine.isNotification(rpcRequest))
