@@ -220,7 +220,7 @@ public class JsonServiceExporter
         
         // invoke the method
         try {
-        	LOGGER.debug("Invoking service method: "+invocation.method.getName());
+        	LOGGER.debug("Invoking service method: "+invocation.toString());
             Object result = ReflectionUtils.invokeMethod(
             	invocation.method, getService(), invocation.params.toArray(new Object[0]));
             return (!jsonEngine.isNotification(rpcRequest))
@@ -358,6 +358,21 @@ public class JsonServiceExporter
     private class MethodAndParams {
     	private Method method;
     	private List<Object> params = new ArrayList<Object>();
+    	public String toString() {
+    		StringBuilder buff = new StringBuilder()
+    			.append(method.getName())
+    			.append("(");
+    		for (int i=0; i<params.size(); i++) {
+    			Object param = params.get(i);
+    			if (i!=0) { buff.append(", "); }
+    			buff.append(i).append(":")
+    				.append(param.getClass().getName())
+    				.append(":[")
+    				.append(params.get(i).toString())
+    				.append("]");
+    		}
+    		return buff.toString();
+    	}
     }
 
     /**
