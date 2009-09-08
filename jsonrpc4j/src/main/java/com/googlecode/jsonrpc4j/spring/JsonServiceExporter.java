@@ -371,6 +371,7 @@ public class JsonServiceExporter
     				.append(params.get(i).toString())
     				.append("]");
     		}
+    		buff.append(")");
     		return buff.toString();
     	}
     }
