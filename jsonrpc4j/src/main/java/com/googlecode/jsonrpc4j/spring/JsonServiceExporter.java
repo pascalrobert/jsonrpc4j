@@ -365,11 +365,17 @@ public class JsonServiceExporter
     		for (int i=0; i<params.size(); i++) {
     			Object param = params.get(i);
     			if (i!=0) { buff.append(", "); }
-    			buff.append(i).append(":")
-    				.append(param.getClass().getName())
-    				.append(":[")
-    				.append(params.get(i).toString())
-    				.append("]");
+    			if (param!=null) {
+	    			buff.append(i).append(":")
+	    				.append(param.getClass().getName())
+	    				.append(":[")
+	    				.append(param.toString())
+	    				.append("]");
+    			} else {
+	    			buff.append(i).append(":")
+	    				.append("unknown")
+	    				.append(":[null]");
+    			}
     		}
     		buff.append(")");
     		return buff.toString();
