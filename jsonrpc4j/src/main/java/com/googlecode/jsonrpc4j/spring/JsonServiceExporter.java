@@ -97,6 +97,9 @@ public class JsonServiceExporter
         // read in the request
         try {
             rpcRequest = jsonEngine.readJson(request.getInputStream());
+            if (LOGGER.isDebugEnabled()) {
+            	LOGGER.debug("rpcRequest: "+rpcRequest.toString());
+            }
         } catch(JsonException e) {
         	LOGGER.error("Unable to read JSON-RPC request(s) from client");
             response.setStatus(500);
