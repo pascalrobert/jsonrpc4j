@@ -2,13 +2,15 @@ package com.googlecode.jsonrpc4j.jackson;
 
 import java.io.ByteArrayInputStream;
 
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,7 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.JsonDeserializer;
 import org.codehaus.jackson.map.JsonSerializer;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.DeserializationConfig.Feature;
 import org.codehaus.jackson.map.deser.StdDeserializerProvider;
 import org.codehaus.jackson.map.type.TypeFactory;
 import org.codehaus.jackson.node.ArrayNode;
@@ -39,6 +42,12 @@ public class JacksonJsonEngine
 	private ObjectMapper objectMapper;
 	private AliasDeserializerFactory aliasDeserializationFactory;
 	private AliasSerializerFactory aliasSerializationFactory;
+	
+	private Map<org.codehaus.jackson.map.SerializationConfig.Feature, Boolean> 
+		serializationFeatures = new HashMap<org.codehaus.jackson.map.SerializationConfig.Feature, Boolean>();
+	private Map<Feature, Boolean> deserializationFeatures = new HashMap<Feature, Boolean>();
+	
+	private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	/**
 	 * 
@@ -58,6 +67,16 @@ public class JacksonJsonEngine
 		objectMapper = new ObjectMapper(jsonFactory);
 		objectMapper.setDeserializerProvider(new StdDeserializerProvider(aliasDeserializationFactory));
 		objectMapper.setSerializerFactory(aliasSerializationFactory);
+		objectMapper.getSerializationConfig().setDateFormat(dateFormat);
+		objectMapper.getDeserializationConfig().setDateFormat(dateFormat);
+		
+		// set features
+		for (org.codehaus.jackson.map.SerializationConfig.Feature f : serializationFeatures.keySet()) {
+			objectMapper.getSerializationConfig().set(f, serializationFeatures.get(f));
+		}
+		for (Feature f : deserializationFeatures.keySet()) {
+			objectMapper.getDeserializationConfig().set(f, deserializationFeatures.get(f));
+		}
 		
 		// set the codec
 		jsonFactory.setCodec(objectMapper);
@@ -500,6 +519,29 @@ public class JacksonJsonEngine
 	 */
 	public <T> void addJsonSerializer(Class<T> forClass, JsonSerializer<T> serializer) {
 		aliasSerializationFactory.addSpecificMapping(forClass, serializer);
+	}
+
+	/**
+	 * @param dateFormat the dateFormat to set
+	 */
+	public void setDateFormat(DateFormat dateFormat) {
+		this.dateFormat = dateFormat;
+	}
+
+	/**
+	 * @param serializationFeatures the serializationFeatures to set
+	 */
+	public void setSerializationFeatures(
+		Map<org.codehaus.jackson.map.SerializationConfig.Feature, Boolean> serializationFeatures) {
+		this.serializationFeatures = serializationFeatures;
+	}
+
+	/**
+	 * @param deserializationFeatures the deserializationFeatures to set
+	 */
+	public void setDeserializationFeatures(
+		Map<Feature, Boolean> deserializationFeatures) {
+		this.deserializationFeatures = deserializationFeatures;
 	}
 	
 }
