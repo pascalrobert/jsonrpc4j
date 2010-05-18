@@ -1,6 +1,7 @@
 package com.googlecode.jsonrpc4j.jsonorg;
 
 import java.io.InputStream;
+
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.Iterator;
@@ -8,6 +9,7 @@ import java.util.Map;
 import java.util.Random;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.googlecode.jsonrpc4j.JsonEngine;
@@ -117,14 +119,34 @@ public class JsonOrgJsonEngine
 
 	public Object getParameterFromRpcRequest(Object json, int index)
 		throws JsonException {
-		// TODO Auto-generated method stub
-		return null;
+		
+		// make sure it's what we expect
+        if (!isRpcRequestParametersIndexed(json)) {
+            throw new JsonException(
+                "JSON-RPC request params are not indexed");
+        }
+        
+        try {
+        	return ((JSONObject)json).getJSONArray("params").get(index);
+        } catch(JSONException je) {
+        	throw new JsonException(je);
+        }
 	}
 
 	public Object getParameterFromRpcRequest(Object json, String name)
-			throws JsonException {
-		// TODO Auto-generated method stub
-		return null;
+		throws JsonException {
+		
+		// make sure it's what we expect
+        if (isRpcRequestParametersIndexed(json)) {
+            throw new JsonException(
+                "JSON-RPC request params are indexed");
+        }
+        
+        try {
+        	return ((JSONObject)json).getJSONObject("params").get(name);
+        } catch(JSONException je) {
+        	throw new JsonException(je);
+        }
 	}
 
 	public Iterator<Object> getRpcBatchIterator(Object json)
