@@ -4,10 +4,12 @@ import java.io.InputStream;
 
 import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 
+import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -150,61 +152,135 @@ public class JsonOrgJsonEngine
 	}
 
 	public Iterator<Object> getRpcBatchIterator(Object json)
-			throws JsonException {
-		// TODO Auto-generated method stub
-		return null;
+		throws JsonException {
+		if (!(json instanceof JSONArray)) {
+            throw new JsonException(
+                "Source is not an JSONArray");
+        }
+		JSONArray array = JSONArray.class.cast(json);
+		ArrayList<Object> ret = new ArrayList<Object>();
+		for (int i=0; i<array.length(); i++) {
+			ret.add(array.opt(i));
+		}
+		return ret.iterator();
 	}
 
-	public boolean isNotification(Object json) throws JsonException {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isNotification(Object json) 
+		throws JsonException {
+		return (!(json instanceof JSONObject))
+			? false : (
+				((JSONObject)json).opt("id")==null
+				|| ((JSONObject)json).isNull("id")
+			);
 	}
 
-	public boolean isRpcBatchRequest(Object json) throws JsonException {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isRpcBatchRequest(Object json) 
+		throws JsonException {
+		return (json instanceof JSONArray);
 	}
 
 	public boolean isRpcRequestParametersIndexed(Object json)
-			throws JsonException {
-		// TODO Auto-generated method stub
-		return false;
+		throws JsonException {
+		
+		// make sure it's what we expect
+        if (!(json instanceof JSONObject)) {
+            throw new JsonException(
+                "Source is not a JSONObject");
+        }
+        
+        JSONObject node = JSONObject.class.cast(json);
+        return (node.opt("params") instanceof JSONArray);
 	}
 
 	public <T> T jsonToObject(Object json, Class<T> valueType)
-			throws JsonException {
-		// TODO Auto-generated method stub
-		return null;
+		throws JsonException {
+        
+        try {
+        	return JSONUtil.fromJSON(json, valueType);
+        } catch(Exception e) {
+        	throw new JsonException(e);
+        }
 	}
 
-	public <T> T jsonToObject(Object json, Type valueType) throws JsonException {
-		// TODO Auto-generated method stub
-		return null;
+	public <T> T jsonToObject(Object json, Type valueType) 
+		throws JsonException {
+        
+        try {
+        	return JSONUtil.fromJSON(json, valueType);
+        } catch(Exception e) {
+        	throw new JsonException(e);
+        }
 	}
 
-	public <T> Object objectToJson(T obj) throws JsonException {
-		// TODO Auto-generated method stub
-		return null;
+	public <T> Object objectToJson(T obj) 
+		throws JsonException {
+        try {
+        	return JSONUtil.toJSON(obj);
+        } catch(Exception e) {
+        	throw new JsonException(e);
+        }
 	}
 
-	public Object readJson(InputStream in) throws JsonException {
-		// TODO Auto-generated method stub
-		return null;
+	public Object readJson(InputStream in) 
+		throws JsonException {
+        try {
+        	return JSONUtil.fromJSONString(IOUtils.toString(in));
+        } catch(Exception e) {
+        	throw new JsonException(e);
+        }
 	}
 
-	public Object validateRpcBatchRequest(Object json) throws JsonException {
-		// TODO Auto-generated method stub
-		return null;
+	public Object validateRpcBatchRequest(Object json) 
+		throws JsonException {
+		if (!(json instanceof JSONArray)) {
+            throw new JsonException(
+                "Source is not an JSONArray");
+        }
+		JSONArray array = JSONArray.class.cast(json);
+		for (int i=0; i<array.length(); i++) {
+			validateRpcRequest(array.opt(i));
+		}
+        return array;
 	}
 
-	public Object validateRpcRequest(Object json) throws JsonException {
-		// TODO Auto-generated method stub
-		return null;
+	public Object validateRpcRequest(Object json) 
+		throws JsonException {
+		
+		// make sure it's what we expect
+		if (!(json instanceof JSONObject)) {
+            throw new JsonException(
+                "Source is not an JSONObject");
+        } 
+        
+        // cast
+		JSONObject obj = JSONObject.class.cast(json);
+        String versionNode = obj.optString("jsonrpc");
+        String methodNode = obj.optString("method");
+        
+        // verify version node
+        if (versionNode==null 
+            || !versionNode.equals("2.0")) {
+            throw new JsonException(
+                "\"jsonrpc\" attribute not \"2.0\" or not found");
+            
+        // verify method node
+        } else if (methodNode==null
+            || methodNode.trim().equals("")) {
+            throw new JsonException(
+                "\"method\" attribute empty or not found");
+            
+        }
+        
+        return obj;
 	}
 
-	public void writeJson(Object json, OutputStream out) throws JsonException {
-		// TODO Auto-generated method stub
-
+	public void writeJson(Object json, OutputStream out) 
+		throws JsonException {
+		try {
+			out.write(JSONUtil.toJSONString(json).getBytes());
+		} catch(Exception e) {
+			throw new JsonException(e);
+		}
 	}
 
 }
