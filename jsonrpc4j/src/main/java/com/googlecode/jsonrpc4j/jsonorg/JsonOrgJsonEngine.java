@@ -196,7 +196,7 @@ public class JsonOrgJsonEngine
 		throws JsonException {
         
         try {
-        	return JSONUtil.fromJSON(json, valueType);
+        	return (T)JSONUtil.fromJSON(json, valueType);
         } catch(Exception e) {
         	throw new JsonException(e);
         }
@@ -206,7 +206,7 @@ public class JsonOrgJsonEngine
 		throws JsonException {
         
         try {
-        	return JSONUtil.fromJSON(json, valueType);
+        	return (T)JSONUtil.fromJSON(json, valueType);
         } catch(Exception e) {
         	throw new JsonException(e);
         }
@@ -215,7 +215,7 @@ public class JsonOrgJsonEngine
 	public <T> Object objectToJson(T obj) 
 		throws JsonException {
         try {
-        	return JSONUtil.toJSON(obj);
+        	return (T)JSONUtil.toJSON(obj);
         } catch(Exception e) {
         	throw new JsonException(e);
         }
