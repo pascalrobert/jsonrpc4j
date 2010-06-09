@@ -192,6 +192,7 @@ public class JsonOrgJsonEngine
         return (node.opt("params") instanceof JSONArray);
 	}
 
+	@SuppressWarnings("unchecked")
 	public <T> T jsonToObject(Object json, Class<T> valueType)
 		throws JsonException {
         
@@ -202,6 +203,7 @@ public class JsonOrgJsonEngine
         }
 	}
 
+	@SuppressWarnings("unchecked")
 	public <T> T jsonToObject(Object json, Type valueType) 
 		throws JsonException {
         
@@ -212,6 +214,7 @@ public class JsonOrgJsonEngine
         }
 	}
 
+	@SuppressWarnings("unchecked")
 	public <T> Object objectToJson(T obj) 
 		throws JsonException {
         try {
