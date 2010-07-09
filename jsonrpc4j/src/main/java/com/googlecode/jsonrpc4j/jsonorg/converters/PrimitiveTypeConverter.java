@@ -1,5 +1,7 @@
 package com.googlecode.jsonrpc4j.jsonorg.converters;
 
+import java.math.BigDecimal;
+
 import com.googlecode.jsonrpc4j.jsonorg.TypeConverter;
 
 /**
@@ -13,7 +15,30 @@ public class PrimitiveTypeConverter
 	 * {@inheritDoc}
 	 */
 	public Object fromJSON(Object object, Class<?> clazz) {
-		return object;
+		if (Byte.class.isAssignableFrom(clazz)) {
+			return Number.class.cast(object).byteValue();
+
+		} else if (Short.class.isAssignableFrom(clazz)) {
+			return Number.class.cast(object).shortValue();
+			
+		} else if (Integer.class.isAssignableFrom(clazz)) {
+			return Number.class.cast(object).intValue();
+			
+		} else if (Long.class.isAssignableFrom(clazz)) {
+			return Number.class.cast(object).longValue();
+			
+		} else if (Float.class.isAssignableFrom(clazz)) {
+			return Number.class.cast(object).floatValue();
+			
+		} else if (Double.class.isAssignableFrom(clazz)) {
+			return Number.class.cast(object).doubleValue();
+			
+		} else if (BigDecimal.class.isAssignableFrom(clazz)) {
+			return new BigDecimal(object.toString());
+			
+		} else {
+			return object;
+		}
 	}
 
 	/**
