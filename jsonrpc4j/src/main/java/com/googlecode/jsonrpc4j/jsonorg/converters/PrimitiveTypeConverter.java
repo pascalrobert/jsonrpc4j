@@ -1,6 +1,7 @@
 package com.googlecode.jsonrpc4j.jsonorg.converters;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import com.googlecode.jsonrpc4j.jsonorg.TypeConverter;
 
@@ -35,6 +36,9 @@ public class PrimitiveTypeConverter
 			
 		} else if (BigDecimal.class.isAssignableFrom(clazz)) {
 			return new BigDecimal(object.toString());
+			
+		} else if (BigInteger.class.isAssignableFrom(clazz)) {
+			return new BigInteger(object.toString());
 			
 		} else {
 			return object;
