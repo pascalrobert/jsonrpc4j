@@ -449,9 +449,8 @@ public class JSONUtil {
 				
 				// find the getter
 				for (Method getter : methods) {
-					if ((getter.getName().startsWith("get") 
-						|| getter.getName().startsWith("is"))
-						&& getter.getName().endsWith(propertyName)
+					if ((getter.getName().toLowerCase().equals("get"+propertyName.toLowerCase())
+						|| getter.getName().toLowerCase().equals("is"+propertyName.toLowerCase()))
 						&& getter.getParameterTypes().length==0) {
 						
 						propertyName 
