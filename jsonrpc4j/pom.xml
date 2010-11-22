@@ -10,7 +10,7 @@
 
 	<properties>
 		<spring-remoting.version>2.0.8</spring-remoting.version>
-		<jackson.version>1.2.0</jackson.version>
+		<jackson.version>1.6.1</jackson.version>
 	</properties>
 
 	<!--
@@ -116,28 +116,24 @@
 	</build>
 
 	<dependencies>
+
+		<!-- 
+		 | json dependencies
+		 +-->
 		<dependency>
 			<groupId>org.codehaus.jackson</groupId>
 			<artifactId>jackson-core-lgpl</artifactId>
 			<version>${jackson.version}</version>
-			<scope>compile</scope>
-			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.jackson</groupId>
 			<artifactId>jackson-mapper-lgpl</artifactId>
 			<version>${jackson.version}</version>
-			<scope>compile</scope>
-			<optional>true</optional>
-		</dependency>		
-		<dependency>
-			<groupId>org.json</groupId>
-			<artifactId>json</artifactId>
-			<version>20090211</version>
-			<scope>compile</scope>
-			<optional>true</optional>
 		</dependency>
-	
+
+		<!-- 
+		 | spring dependencies
+		 +-->
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-remoting</artifactId>
@@ -148,22 +144,15 @@
 			<artifactId>servlet-api</artifactId>
 			<version>2.5</version>
 		</dependency>
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
-			<version>1.4</version>
-		</dependency>
-		<dependency>
-			<groupId>commons-httpclient</groupId>
-			<artifactId>commons-httpclient</artifactId>
-			<version>3.1</version>
-		</dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.4.2</version>
         </dependency>
 
+		<!-- 
+		 | test dependencies
+		 +-->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
