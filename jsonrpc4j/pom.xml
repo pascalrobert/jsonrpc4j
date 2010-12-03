@@ -45,7 +45,7 @@
 			<layout>default</layout>
 		</repository>
 		<!-- <site>
-			<id>jsonrpc4j-webdav-maven-repo</id>
+			<id>jsonrpc4j-webdav-maven-site</id>
 			<name>jsonrpc4j site server</name>
 			<url>dav:https://jsonrpc4j.googlecode.com/svn/maven/site/</url>
 		</site> -->
@@ -138,17 +138,14 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-remoting</artifactId>
 			<version>${spring-remoting.version}</version>
+			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
 			<version>2.5</version>
+			<optional>true</optional>
 		</dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.4.2</version>
-        </dependency>
 
 		<!-- 
 		 | test dependencies
