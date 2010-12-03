@@ -8,6 +8,9 @@ import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Utilities for create client proxies.
+ */
 public class ProxyUtil {
 
 	/**
