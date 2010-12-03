@@ -1,11 +1,16 @@
 package com.googlecode.jsonrpc4j;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.Random;
 
+import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.type.TypeFactory;
 import org.codehaus.jackson.node.ObjectNode;
@@ -57,21 +62,33 @@ public class JsonRpcClient {
 		String methodName, Object[] arguments, Type returnType, 
 		OutputStream ops, InputStream ips)
 		throws Exception {
-		
-		// generate an id
-		String id = random.nextLong()+"";
-		
-		// create the request
-		ObjectNode request = mapper.createObjectNode();
-		request.put("id", id);
-		request.put("jsonrpc", JSON_RPC_VERSION);
-		request.put("method", methodName);
-		request.put("params", mapper.valueToTree(arguments));
 
-		// post the json data;
-		mapper.writeValue(ops, request);
+		// write the request
+		writeRequest(methodName, arguments, ops, random.nextLong()+"");
 		ops.flush();
-		
+
+		// read the request
+		return readResponse(returnType, ips);
+	}
+
+	/**
+	 * Reads the response from the server.
+	 * @param returnType the expected return type
+	 * @param ips the {@link InnputStream} to read the response from
+	 * @return the object
+	 * @throws IOException
+	 * @throws JsonProcessingException
+	 * @throws Exception
+	 * @throws JsonParseException
+	 * @throws JsonMappingException
+	 */
+	public Object readResponse(Type returnType, InputStream ips)
+		throws IOException,
+		JsonProcessingException,
+		Exception,
+		JsonParseException,
+		JsonMappingException {
+
 		// read the response
 		JsonNode response = mapper.readTree(ips);
 
@@ -91,12 +108,39 @@ public class JsonRpcClient {
 
 		// convert it to a return object
 		if (jsonObject.has("result")) {
-			return mapper.readValue(jsonObject,
+			return mapper.readValue(jsonObject.get("result"),
 				TypeFactory.type(returnType).getRawClass());
 		}
 
 		// no return type
 		return null;
+	}
+
+	/**
+	 * Writes a request to the server.
+	 * @param methodName the method to invoke
+	 * @param arguments the method arguments
+	 * @param ops the {@link OutputStream}
+	 * @param id the id
+	 * @throws IOException
+	 * @throws JsonGenerationException
+	 * @throws JsonMappingException
+	 */
+	public void writeRequest(
+		String methodName, Object[] arguments, OutputStream ops, String id)
+		throws IOException,
+		JsonGenerationException,
+		JsonMappingException {
+
+		// create the request
+		ObjectNode request = mapper.createObjectNode();
+		request.put("id", id);
+		request.put("jsonrpc", JSON_RPC_VERSION);
+		request.put("method", methodName);
+		request.put("params", mapper.valueToTree(arguments));
+
+		// post the json data;
+		mapper.writeValue(ops, request);
 	}
 
 
