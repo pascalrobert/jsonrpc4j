@@ -270,8 +270,8 @@ public class JsonRpcServer {
 		} catch (Exception e) {
 			error = mapper.createObjectNode();
 			error.put("code", 0);
-			error.put("message", e.getLocalizedMessage());
-			error.put("data", mapper.valueToTree(e));
+			error.put("message", e.getMessage());
+			error.put("data", e.getClass().getName());
 		}
 
 		// bail if notification request
