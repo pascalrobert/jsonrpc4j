@@ -267,7 +267,10 @@ public class JsonRpcServer {
 		ObjectNode error = null;
 		try {
 			result = invoke(method, paramNodes);
-		} catch (Exception e) {
+		} catch (Throwable e) {
+			if (InvocationTargetException.class.isInstance(e)) {
+				e = InvocationTargetException.class.cast(e).getTargetException();
+			}
 			error = mapper.createObjectNode();
 			error.put("code", 0);
 			error.put("message", e.getMessage());
