@@ -8,6 +8,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -180,8 +181,8 @@ public class JsonRpcServer {
 		int paramCount		= (params!=null) ? params.size() : 0;
 
 		// find methods
-		Set<Method> methods = ReflectionUtil
-			.findMethods(getHandlerClass(), methodName);
+		Set<Method> methods = new HashSet<Method>();
+		methods.addAll(ReflectionUtil.findMethods(getHandlerClass(), methodName));
 
 		// method not found
 		if (methods.isEmpty()) {
