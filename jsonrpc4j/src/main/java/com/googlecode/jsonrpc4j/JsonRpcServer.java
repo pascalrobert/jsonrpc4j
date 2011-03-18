@@ -266,9 +266,11 @@ public class JsonRpcServer {
 		// invoke the method
 		JsonNode result = null;
 		ObjectNode error = null;
+		Throwable thrown = null;
 		try {
 			result = invoke(method, paramNodes);
 		} catch (Throwable e) {
+			thrown = e;
 			if (InvocationTargetException.class.isInstance(e)) {
 				e = InvocationTargetException.class.cast(e).getTargetException();
 			}
@@ -295,6 +297,11 @@ public class JsonRpcServer {
 
 		// write it
 		mapper.writeValue(ops, response);
+
+		// re-throw errors
+		if (thrown!=null) {
+			throw new RuntimeException(thrown);
+		}
 	}
 
 	/**
