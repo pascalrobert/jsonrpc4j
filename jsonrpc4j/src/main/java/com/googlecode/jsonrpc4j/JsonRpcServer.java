@@ -1,5 +1,6 @@
 package com.googlecode.jsonrpc4j;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -7,11 +8,15 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonNode;
@@ -27,6 +32,8 @@ import org.codehaus.jackson.node.ObjectNode;
  * input stream and writes responses to an output stream.
  */
 public class JsonRpcServer {
+	
+    public static final String JSONRPC_RESPONSE_CONTENT_TYPE = "application/json-rpc";
 
 	private ObjectMapper mapper;
 	private Object handler;
@@ -74,6 +81,63 @@ public class JsonRpcServer {
 	 */
 	public JsonRpcServer(Object handler) {
 		this(new ObjectMapper(), handler, null);
+	}
+
+	/**
+	 * Handles a single request from the given {@link InputStream},
+	 * that is to say that a single {@link JsonNode} is read from
+	 * the stream and treated as a JSON-RPC request.  All responses
+	 * are written to the given {@link OutputStream}.
+	 * @param ips the {@link InputStream}
+	 * @param ops the {@link OutputStream}
+	 * @throws JsonParseException
+	 * @throws JsonMappingException
+	 * @throws IOException
+	 */
+	public void handle(HttpServletRequest request, HttpServletResponse response)
+		throws JsonParseException,
+		JsonMappingException,
+		IOException {
+
+    	// set response type
+    	response.setContentType(JSONRPC_RESPONSE_CONTENT_TYPE);
+ 
+    	// setup streams
+    	InputStream input 	= null;
+    	OutputStream output	= response.getOutputStream();
+
+		// POST
+		if (request.getMethod().equals("POST")) {
+			input = request.getInputStream();
+
+		// GET
+		} else if (request.getMethod().equals("GET")) {
+
+			// get parameters
+			String method	= request.getParameter("method");
+			String id		= request.getParameter("id");
+			String params 	= URLDecoder.decode(new String(Base64.decode(
+				request.getParameter("params"))), "UTF-8");
+
+			// create full RPC request
+			StringBuilder buff = new StringBuilder();
+			buff.append("{ ")
+				.append("\"id\": \"").append(id).append("\", ")
+				.append("\"method\": \"").append(method).append("\", ")
+				.append("\"params\": ").append(params).append(" ")
+				.append("}");
+
+			// setup stream to byte array
+			input = new ByteArrayInputStream(buff.toString().getBytes());
+
+		// invalid request
+		} else {
+			throw new IOException(
+				"Invalid request method, only POST and GET is supported");
+		}
+
+		// service the request
+		handleNode(mapper.readValue(input, JsonNode.class), output);
 	}
 
 	/**

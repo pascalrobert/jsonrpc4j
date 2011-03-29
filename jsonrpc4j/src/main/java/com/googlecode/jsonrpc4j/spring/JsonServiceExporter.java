@@ -3,8 +3,6 @@ package com.googlecode.jsonrpc4j.spring;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
-import javax.servlet.ServletInputStream;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -33,13 +31,6 @@ public class JsonServiceExporter
     implements HttpRequestHandler,
     InitializingBean,
     ApplicationContextAware {
-	
-    public static final String JSONRPC_RESPONSE_CONTENT_TYPE = "application/json-rpc";
-    public static final String[] JSONRPC_REQUEST_CONTENT_TYPES = {
-        "application/json-rpc",
-        "application/json",
-        "application/jsonrequest"
-    };
 
     private ObjectMapper objectMapper;
     private JsonRpcServer jsonRpcServer;
@@ -78,18 +69,8 @@ public class JsonServiceExporter
     public void handleRequest(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, 
         IOException {
-
-    	// get the servlet streams
-    	ServletInputStream ips = request.getInputStream();
-    	ServletOutputStream ops = response.getOutputStream();
-
-    	// set response type
-    	response.setContentType(JSONRPC_RESPONSE_CONTENT_TYPE);
-
-    	// handle it
-    	jsonRpcServer.handle(ips, ops);
-    	ops.flush();
-        
+    	jsonRpcServer.handle(request, response);
+        response.getOutputStream().flush();
     }
 
     /**
