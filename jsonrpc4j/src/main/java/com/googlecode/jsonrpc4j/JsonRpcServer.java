@@ -253,13 +253,6 @@ public class JsonRpcServer {
 		Set<Method> methods = new HashSet<Method>();
 		methods.addAll(ReflectionUtil.findMethods(getHandlerClass(), methodName));
 
-		// method not found
-		if (methods.isEmpty()) {
-			mapper.writeValue(ops, createErrorResponse(
-				jsonRpc, id, -32601, "Method not found", null));
-			return;
-		}
-
 		// iterate through the methods and remove
 		// the one's who's parameter count's don't
 		// match the request
@@ -271,12 +264,19 @@ public class JsonRpcServer {
 			}
 		}
 
+		// method not found
+		if (methods.isEmpty()) {
+			mapper.writeValue(ops, createErrorResponse(
+				jsonRpc, id, -32601, "Method not found", null));
+			return;
+		}
+
 		// choose a method
 		Method method = null;
 		List<JsonNode> paramNodes = new ArrayList<JsonNode>();
 
-		// handle param arrays, no params, and single methods
-		if (paramCount==0 || params.isArray() || (methods.size()==1)) {
+		// handle param arrays, no params
+		if (paramCount==0 || params.isArray()) {
 			method = methods.iterator().next();
 			for (int i=0; i<paramCount; i++) {
 				paramNodes.add(params.get(i));
