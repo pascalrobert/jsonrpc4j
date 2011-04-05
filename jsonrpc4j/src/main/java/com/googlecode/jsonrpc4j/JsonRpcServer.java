@@ -14,6 +14,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -32,9 +34,12 @@ import org.codehaus.jackson.node.ObjectNode;
  * input stream and writes responses to an output stream.
  */
 public class JsonRpcServer {
-	
+
+	private static final Logger LOGGER = Logger.getLogger(JsonRpcServer.class.getName());
+
     public static final String JSONRPC_RESPONSE_CONTENT_TYPE = "application/json-rpc";
 
+    private boolean rethrowExceptions = false;
 	private ObjectMapper mapper;
 	private Object handler;
 	private Class<?> remoteInterface;
@@ -362,9 +367,12 @@ public class JsonRpcServer {
 		// write it
 		mapper.writeValue(ops, response);
 
-		// re-throw errors
+		// log and potentially re-throw errors
 		if (thrown!=null) {
-			throw new RuntimeException(thrown);
+			LOGGER.log(Level.SEVERE, "Error in JSON-RPC Service", thrown);
+			if (rethrowExceptions) {
+				throw new RuntimeException(thrown);
+			}
 		}
 	}
 
@@ -425,6 +433,22 @@ public class JsonRpcServer {
 		response.put("id", id);
 		response.put("error", error);
 		return response;
+	}
+
+	/**
+	 * Indicates whether or not the server is re-throwing exceptions.
+	 * @return true if re-throwing, false otherwise
+	 */
+	public boolean isRethrowExceptions() {
+		return rethrowExceptions;
+	}
+
+	/**
+	 * Sets whether or not the server should re-throw exceptions.
+	 * @param rethrowExceptions true or false
+	 */
+	public void setRethrowExceptions(boolean rethrowExceptions) {
+		this.rethrowExceptions = rethrowExceptions;
 	}
 
 }

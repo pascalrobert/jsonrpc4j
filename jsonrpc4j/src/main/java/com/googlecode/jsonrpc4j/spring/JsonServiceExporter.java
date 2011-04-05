@@ -35,6 +35,7 @@ public class JsonServiceExporter
     private ObjectMapper objectMapper;
     private JsonRpcServer jsonRpcServer;
     private ApplicationContext applicationContext;
+    private boolean rethrowExceptions = false;
 
     /**
      * {@inheritDoc}
@@ -61,6 +62,7 @@ public class JsonServiceExporter
 		// create the server
 		jsonRpcServer = new JsonRpcServer(
 			objectMapper, getService(), getServiceInterface());
+		jsonRpcServer.setRethrowExceptions(rethrowExceptions);
     }
     
     /**
@@ -80,5 +82,19 @@ public class JsonServiceExporter
 		throws BeansException {
 		this.applicationContext = applicationContext;
 	}
-    
+
+	/**
+	 * @param objectMapper the objectMapper to set
+	 */
+	public void setObjectMapper(ObjectMapper objectMapper) {
+		this.objectMapper = objectMapper;
+	}
+
+	/**
+	 * @param rethrowExceptions the rethrowExceptions to set
+	 */
+	public void setRethrowExceptions(boolean rethrowExceptions) {
+		this.rethrowExceptions = rethrowExceptions;
+	}
+
 }
