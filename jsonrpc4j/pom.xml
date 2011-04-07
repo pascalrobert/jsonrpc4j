@@ -3,14 +3,14 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.googlecode</groupId>
 	<artifactId>jsonrpc4j</artifactId>
-	<version>0.14-SNAPSHOT</version>
+	<version>0.14</version>
 	<name>JSON-RPC for java</name>
 	<packaging>jar</packaging>
 	<url>http://code.google.com/p/jsonrpc4j/</url>
 
 	<properties>
 		<spring-remoting.version>2.0.8</spring-remoting.version>
-		<jackson.version>1.6.1</jackson.version>
+		<jackson.version>1.7.5</jackson.version>
 	</properties>
 
 	<!--
@@ -28,9 +28,9 @@
      | scm configuration
      +-->
 	<scm>
-		<connection>scm:svn:http://jsonrpc4j.googlecode.com/svn/trunk/jsonrpc4j</connection>
-		<developerConnection>scm:svn:https://jsonrpc4j.googlecode.com/svn/trunk/jsonrpc4j</developerConnection>
-		<url>jsonrpc4j.googlecode.com/svn/trunk/jsonrpc4j</url>
+		<connection>scm:svn:http://jsonrpc4j.googlecode.com/svn/tags/jsonrpc4j-0.14</connection>
+		<developerConnection>scm:svn:https://jsonrpc4j.googlecode.com/svn/tags/jsonrpc4j-0.14</developerConnection>
+		<url>jsonrpc4j.googlecode.com/svn/tags/jsonrpc4j-0.14</url>
 	</scm>
 	
 	<!--
@@ -122,12 +122,7 @@
 		 +-->
 		<dependency>
 			<groupId>org.codehaus.jackson</groupId>
-			<artifactId>jackson-core-lgpl</artifactId>
-			<version>${jackson.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.codehaus.jackson</groupId>
-			<artifactId>jackson-mapper-lgpl</artifactId>
+			<artifactId>jackson-mapper-asl</artifactId>
 			<version>${jackson.version}</version>
 		</dependency>
 
