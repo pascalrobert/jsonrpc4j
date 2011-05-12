@@ -402,8 +402,8 @@ public class JsonRpcServer {
 		Object[] convertedParams = new Object[params.size()];
 		Type[] parameterTypes = m.getGenericParameterTypes();
 		for (int i=0; i<parameterTypes.length; i++) {
-			convertedParams[i] = mapper.treeToValue(
-				params.get(i), TypeFactory.type(parameterTypes[i]).getRawClass());
+			convertedParams[i] = mapper.readValue(
+				params.get(i), TypeFactory.type(parameterTypes[i]));
 		}
 
 		// invoke the method
