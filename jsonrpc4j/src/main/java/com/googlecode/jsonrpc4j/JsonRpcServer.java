@@ -332,6 +332,17 @@ public class JsonRpcServer {
 			return;
 		}
 
+		// get @JsonRpcErrors and nested @JsonRpcError annotations on method
+		Annotation[] methodAnnotations = method.getAnnotations();
+		JsonRpcError[] errorMappings = {};
+		for (Annotation a : methodAnnotations) {
+			if (!JsonRpcErrors.class.isInstance(a)) {
+				continue;
+			} else {
+				errorMappings = JsonRpcErrors.class.cast(a).value();
+			}
+		}
+
 		// invoke the method
 		JsonNode result = null;
 		ObjectNode error = null;
@@ -344,9 +355,39 @@ public class JsonRpcServer {
 				e = InvocationTargetException.class.cast(e).getTargetException();
 			}
 			error = mapper.createObjectNode();
-			error.put("code", 0);
-			error.put("message", e.getMessage());
-			error.put("data", e.getClass().getName());
+
+			// use error
+			boolean errorMapped = false;
+			for (JsonRpcError em : errorMappings) {
+				if (em.exception().isInstance(e)) {
+					error.put("code", em.code());
+					error.put("message", em.message());
+
+					// get data from annotation
+					String data = em.data();
+
+					// default to exception message
+					if("".equals(data)) {
+						data = e.getMessage();
+					}
+
+					// only add the data if we have a value
+					if (data != null && !"".equals(data)) {
+						error.put("data", data);
+					}
+
+					// we used an annotation for the exception
+					errorMapped = true;
+					break;
+				}
+			}
+
+			// generate generic error response
+			if (!errorMapped) {
+				error.put("code", 0);
+				error.put("message", e.getMessage());
+				error.put("data", e.getClass().getName());
+			}
 		}
 
 		// bail if notification request
