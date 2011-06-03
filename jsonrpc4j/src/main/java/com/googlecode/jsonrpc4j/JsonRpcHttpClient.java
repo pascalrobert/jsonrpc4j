@@ -89,7 +89,7 @@ public class JsonRpcHttpClient
 	 * @throws Exception on error
 	 */
 	public Object invoke(
-		String methodName, Object[] arguments, Class<?> returnType)
+		String methodName, Object[] arguments, Type returnType)
 		throws Throwable {
 		return invoke(methodName, arguments, returnType, new HashMap<String, String>());
 	}

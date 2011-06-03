@@ -1,5 +1,6 @@
 package com.googlecode.jsonrpc4j.spring;
 
+import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
@@ -14,54 +15,53 @@ import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.remoting.support.UrlBasedRemoteAccessor;
 
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
 
+public class JsonProxyFactoryBean
+	extends UrlBasedRemoteAccessor
+	implements MethodInterceptor, 
+	InitializingBean, 
+	FactoryBean, 
+	ApplicationContextAware {
 
-public class JsonProxyFactoryBean 
-	extends UrlBasedRemoteAccessor 
-	implements MethodInterceptor,
-	InitializingBean,
-	FactoryBean {
-	
-	private Object proxyObject 			= null;
-	private ObjectMapper objectMapper 	= null;
-	private JsonRpcHttpClient jsonRpcHttpClient	= null;
-	private Map<String, String> extraHttpHeaders = new HashMap<String, String>();
-	private ApplicationContext applicationContext;
-	
+	private Object				proxyObject			= null;
+	private ObjectMapper		objectMapper		= null;
+	private JsonRpcHttpClient	jsonRpcHttpClient	= null;
+	private Map<String, String>	extraHttpHeaders	= new HashMap<String, String>();
+	private ApplicationContext	applicationContext;
+
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
-		
+
 		// create proxy
 		proxyObject = ProxyFactory.getProxy(getServiceInterface(), this);
 
-    	// find the ObjectMapper
-		if (objectMapper==null
-			&& applicationContext!=null
+		// find the ObjectMapper
+		if (objectMapper == null
+			&& applicationContext != null
 			&& applicationContext.containsBean("objectMapper")) {
-			objectMapper = (ObjectMapper)applicationContext.getBean("objectMapper");
+			objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
 		}
-		if (objectMapper==null
-			&& applicationContext!=null) {
+		if (objectMapper == null && applicationContext != null) {
 			try {
-				objectMapper = (ObjectMapper)BeanFactoryUtils.beanOfTypeIncludingAncestors(
-					applicationContext, ObjectMapper.class);
-			} catch(Exception e) {
+				objectMapper = (ObjectMapper)BeanFactoryUtils
+					.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
+			} catch (Exception e) {
 				objectMapper = new ObjectMapper();
 			}
 		}
 
 		// create JsonRpcHttpClient
 		try {
-			jsonRpcHttpClient = new JsonRpcHttpClient(
-				objectMapper, new URL(getServiceUrl()), extraHttpHeaders);
-		} catch(MalformedURLException mue) {
+			jsonRpcHttpClient = new JsonRpcHttpClient(objectMapper, new URL(getServiceUrl()), extraHttpHeaders);
+		} catch (MalformedURLException mue) {
 			throw new RuntimeException(mue);
 		}
 	}
@@ -69,36 +69,49 @@ public class JsonProxyFactoryBean
 	/**
 	 * {@inheritDoc}
 	 */
-	public Object invoke(MethodInvocation invocation) 
+	public Object invoke(MethodInvocation invocation)
 		throws Throwable {
+
+		// get return type
+		Type retType = (invocation.getMethod().getGenericReturnType() != null)
+			? invocation.getMethod().getGenericReturnType()
+			: invocation.getMethod().getReturnType();
 
 		// invoke it
 		return jsonRpcHttpClient.invoke(
 			invocation.getMethod().getName(),
 			invocation.getArguments(),
-			invocation.getMethod().getReturnType());
+			retType, extraHttpHeaders);
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
-	public Object getObject() 
+	public Object getObject()
 		throws Exception {
 		return proxyObject;
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
 	public Class<?> getObjectType() {
 		return getServiceInterface();
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
 	public boolean isSingleton() {
 		return true;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public void setApplicationContext(ApplicationContext applicationContext)
+		throws BeansException {
+		this.applicationContext = applicationContext;
 	}
 
 	/**
@@ -113,11 +126,6 @@ public class JsonProxyFactoryBean
 	 */
 	public void setExtraHttpHeaders(Map<String, String> extraHttpHeaders) {
 		this.extraHttpHeaders = extraHttpHeaders;
-	}
-
-	public void setApplicationContext(ApplicationContext applicationContext)
-		throws BeansException {
-		this.applicationContext = applicationContext;
 	}
 
 }
