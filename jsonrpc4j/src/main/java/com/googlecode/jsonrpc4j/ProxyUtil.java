@@ -39,7 +39,7 @@ public class ProxyUtil {
 			new InvocationHandler() {
 				public Object invoke(Object proxy, Method method, Object[] args)
 					throws Throwable {
-					return client.invoke(
+					return client.invokeAndReadResponse(
 						method.getName(), args, method.getGenericReturnType(), ops, ips);
 				}
 			});

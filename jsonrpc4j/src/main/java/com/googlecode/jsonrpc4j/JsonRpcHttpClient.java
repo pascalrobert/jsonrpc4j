@@ -1,7 +1,5 @@
 package com.googlecode.jsonrpc4j;
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
@@ -80,6 +78,30 @@ public class JsonRpcHttpClient
 	}
 	
 	/**
+	 * Invokes the given method with the given arguments.
+	 * @param methodName the name of the method to invoke
+	 * @param arguments the arguments to the method
+	 * @throws Exception on error
+	 */
+	public void invoke(String methodName, Object[] arguments)
+		throws Throwable {
+		invoke(methodName, arguments, null, new HashMap<String, String>());
+	}
+
+	/**
+	 * Invokes the given method with the given arguments.
+	 * @param methodName the name of the method to invoke
+	 * @param arguments the arguments to the method
+	 * @param extraHeaders extra headers to add to the request
+	 * @throws Exception on error
+	 */
+	public void invoke(
+		String methodName, Object[] arguments, Map<String, String> extraHeaders)
+		throws Exception {
+		invoke(methodName, arguments, null, new HashMap<String, String>());
+	}
+	
+	/**
 	 * Invokes the given method with the given arguments and returns
 	 * an object of the given type, or null if void.
 	 * @param methodName the name of the method to invoke
@@ -132,11 +154,12 @@ public class JsonRpcHttpClient
 		
 		// open the connection
 		con.connect();
-		OutputStream ops = con.getOutputStream();
-		InputStream ips = con.getInputStream();
 
 		// invoke it
-		return super.invoke(methodName, arguments, returnType, ops, ips);
+		super.invoke(methodName, arguments, con.getOutputStream());
+
+		// read and return value
+		return super.readResponse(returnType, con.getInputStream());
 	}
 
 }

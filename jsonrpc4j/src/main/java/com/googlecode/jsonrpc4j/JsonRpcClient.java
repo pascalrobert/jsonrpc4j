@@ -60,17 +60,32 @@ public class JsonRpcClient {
      * @return the return value
      * @throws Exception on error
      */
-    public Object invoke(
+    public Object invokeAndReadResponse(
         String methodName, Object[] arguments, Type returnType,
         OutputStream ops, InputStream ips)
         throws Exception {
 
-        // write the request
+        // invoke it
+    	invoke(methodName, arguments, ops);
+
+        // read it
+        return readResponse(returnType, ips);
+    }
+
+    /**
+     * Invokes the given method with the given arguments and returns
+     * an object of the given type, or null if void.
+     *
+     * @param methodName   the name of the method to invoke
+     * @param arguments    the arguments to the method
+     * @param returnType   the return type
+     * @throws Exception on error
+     */
+    public void invoke(
+        String methodName, Object[] arguments, OutputStream ops)
+        throws Exception {
         writeRequest(methodName, arguments, ops, random.nextLong()+"");
         ops.flush();
-
-        // read the request
-        return readResponse(returnType, ips);
     }
 
     /**
