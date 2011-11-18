@@ -43,6 +43,7 @@ public class JsonRpcServer {
     public static final String JSONRPC_RESPONSE_CONTENT_TYPE = "application/json-rpc";
 
     private boolean rethrowExceptions = false;
+    private boolean allowExtraParams = false;
 	private ObjectMapper mapper;
 	private Object handler;
 	private Class<?> remoteInterface;
@@ -320,11 +321,13 @@ public class JsonRpcServer {
 
 		// iterate through the methods and remove
 		// the one's who's parameter count's don't
-		// match the request
+		// match the request exactly (unless
+		// allowExtraParams is set)
 		Iterator<Method> itr = methods.iterator();
 		while (itr.hasNext()) {
 			Method method = itr.next();
-			if (method.getParameterTypes().length!=paramCount) {
+			if ((!allowExtraParams && method.getParameterTypes().length!=paramCount) ||
+				(allowExtraParams && method.getParameterTypes().length>paramCount)) {
 				itr.remove();
 			}
 		}
@@ -343,6 +346,12 @@ public class JsonRpcServer {
 		// handle param arrays, no params
 		if (paramCount==0 || paramsNode.isArray()) {
 			method = methods.iterator().next();
+
+			// drop superfluous parameters in list if allowExtraParams is true
+			if (allowExtraParams && paramCount > method.getParameterTypes().length) {
+				paramCount = method.getParameterTypes().length;
+			}
+
 			for (int i=0; i<paramCount; i++) {
 				paramNodes.add(paramsNode.get(i));
 			}
@@ -557,4 +566,16 @@ public class JsonRpcServer {
 		this.rethrowExceptions = rethrowExceptions;
 	}
 
+	public boolean isAllowExtraParams() {
+		return allowExtraParams;
+	}
+	
+	/**
+	 * Sets whether or not the server should allow superfluous
+	 * parameters to method calls.
+	 * @param allowExtraParams true or false
+	 */
+	public void setAllowExtraParams(boolean allowExtraParams) {
+		this.allowExtraParams = allowExtraParams;
+	}
 }
