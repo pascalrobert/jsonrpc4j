@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -17,6 +18,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.portlet.ResourceRequest;
+import javax.portlet.ResourceResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -89,15 +92,53 @@ public class JsonRpcServer {
 	}
 
 	/**
-	 * Handles a single request from the given {@link InputStream},
-	 * that is to say that a single {@link JsonNode} is read from
-	 * the stream and treated as a JSON-RPC request.  All responses
-	 * are written to the given {@link OutputStream}.
-	 * @param ips the {@link InputStream}
-	 * @param ops the {@link OutputStream}
-	 * @throws JsonParseException
-	 * @throws JsonMappingException
-	 * @throws IOException
+	 * Handles a portlet request.
+	 * @param request the {@link ResourceRequest}
+	 * @param response the {@link ResourceResponse}
+	 * @throws JsonParseException on error
+	 * @throws JsonMappingException on error
+	 * @throws IOException on error
+	 */
+	public void handle(ResourceRequest request, ResourceResponse response)
+		throws JsonParseException,
+		JsonMappingException,
+		IOException {
+
+    	// set response type
+    	response.setContentType(JSONRPC_RESPONSE_CONTENT_TYPE);
+ 
+    	// setup streams
+    	InputStream input 	= null;
+    	OutputStream output	= response.getPortletOutputStream();
+
+		// POST
+		if (request.getMethod().equals("POST")) {
+			input = request.getPortletInputStream();
+
+		// GET
+		} else if (request.getMethod().equals("GET")) {
+			input = createInputStream(
+				request.getParameter("method"),
+				request.getParameter("id"),
+				request.getParameter("params"));
+
+		// invalid request
+		} else {
+			throw new IOException(
+				"Invalid request method, only POST and GET is supported");
+		}
+
+		// service the request
+		handleNode(mapper.readValue(input, JsonNode.class), output);
+	}
+
+	/**
+	 * Handles a servlet request.
+	 * @param request the {@link HttpServletRequest}
+	 * @param response the {@link HttpServletResponse}
+	 * @throws JsonParseException on error
+	 * @throws JsonMappingException on error
+	 * @throws IOException on error
 	 */
 	public void handle(HttpServletRequest request, HttpServletResponse response)
 		throws JsonParseException,
@@ -117,23 +158,10 @@ public class JsonRpcServer {
 
 		// GET
 		} else if (request.getMethod().equals("GET")) {
-
-			// get parameters
-			String method	= request.getParameter("method");
-			String id		= request.getParameter("id");
-			String params 	= URLDecoder.decode(new String(Base64.decode(
-				request.getParameter("params"))), "UTF-8");
-
-			// create full RPC request
-			StringBuilder buff = new StringBuilder();
-			buff.append("{ ")
-				.append("\"id\": \"").append(id).append("\", ")
-				.append("\"method\": \"").append(method).append("\", ")
-				.append("\"params\": ").append(params).append(" ")
-				.append("}");
-
-			// setup stream to byte array
-			input = new ByteArrayInputStream(buff.toString().getBytes());
+			input = createInputStream(
+				request.getParameter("method"),
+				request.getParameter("id"),
+				request.getParameter("params"));
 
 		// invalid request
 		} else {
@@ -161,6 +189,36 @@ public class JsonRpcServer {
 		JsonMappingException,
 		IOException {
 		handleNode(mapper.readValue(ips, JsonNode.class), ops);
+	}
+
+	/**
+	 * Returns parameters into an {@link InputStream} of JSON data.
+	 * @param method the method
+	 * @param id the id
+	 * @param params the base64 encoded params
+	 * @return the {@link InputStream}
+	 * @throws UnsupportedEncodingException on error
+	 * @throws IOException on error
+	 */
+	private InputStream createInputStream(String method, String id, String params)
+		throws UnsupportedEncodingException,
+		IOException {
+
+		// decode parameters
+		String decodedParams = URLDecoder.decode(
+			new String(Base64.decode(params)), "UTF-8");
+
+		// create request
+		String request = new StringBuilder()
+			.append("{ ")
+			.append("\"id\": \"").append(id).append("\", ")
+			.append("\"method\": \"").append(method).append("\", ")
+			.append("\"params\": ").append(decodedParams).append(" ")
+			.append("}")
+			.toString();
+
+		// turn into InputStream
+		return new ByteArrayInputStream(request.getBytes());
 	}
 
 	/**
