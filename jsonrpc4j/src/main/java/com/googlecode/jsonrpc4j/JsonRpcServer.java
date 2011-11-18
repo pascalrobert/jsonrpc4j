@@ -242,12 +242,19 @@ public class JsonRpcServer {
 			return;
 		}
 
-		// parse request
-		String jsonRpc		= node.get("jsonrpc").getValueAsText();
-		String methodName	= node.get("method").getValueAsText();
-		String id			= node.get("id").getValueAsText();
-		JsonNode params		= node.get("params");
-		int paramCount		= (params!=null) ? params.size() : 0;
+		// get nodes
+		JsonNode jsonPrcNode	= node.get("jsonrpc");
+		JsonNode methodNode		= node.get("method");
+		JsonNode idNode 		= node.get("id");
+		JsonNode paramsNode		= node.get("params");
+
+		// get node values
+		String jsonRpc		= (jsonPrcNode!=null && !jsonPrcNode.isNull()) ? jsonPrcNode.getValueAsText() : null;
+		String methodName	= (methodNode!=null && !methodNode.isNull()) ? methodNode.getValueAsText() : null;
+		String id			= (idNode!=null && !idNode.isNull()) ? idNode.getValueAsText() : null;
+
+		// count params
+		int paramCount		= (paramsNode!=null) ? paramsNode.size() : 0;
 
 		// find methods
 		Set<Method> methods = new HashSet<Method>();
@@ -276,14 +283,14 @@ public class JsonRpcServer {
 		List<JsonNode> paramNodes = new ArrayList<JsonNode>();
 
 		// handle param arrays, no params
-		if (paramCount==0 || params.isArray()) {
+		if (paramCount==0 || paramsNode.isArray()) {
 			method = methods.iterator().next();
 			for (int i=0; i<paramCount; i++) {
-				paramNodes.add(params.get(i));
+				paramNodes.add(paramsNode.get(i));
 			}
 
 		// handle named params
-		} else if (params.isObject()) {
+		} else if (paramsNode.isObject()) {
 
 			// loop through each method
 			for (Method m : methods) {
@@ -311,8 +318,8 @@ public class JsonRpcServer {
 						break;
 
 					// found it by name
-					} else if (params.has(paramName)) {
-						namedParams.add(params.get(paramName));
+					} else if (paramsNode.has(paramName)) {
+						namedParams.add(paramsNode.get(paramName));
 					}
 				}
 
