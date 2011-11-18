@@ -117,7 +117,9 @@ public class JsonRpcClient {
         ObjectNode jsonObject = ObjectNode.class.cast(response);
 
         // detect errors
-        if (jsonObject.has("error") && jsonObject.get("error")!=null) {
+        if (jsonObject.has("error")
+        	&& jsonObject.get("error")!=null
+        	&& !jsonObject.get("error").isNull()) {
             ObjectNode errorObject = ObjectNode.class.cast(jsonObject.get("error"));
             throw new Exception(
                 "JSON-RPC Error "+errorObject.get("code")+": "+errorObject.get("message"));
