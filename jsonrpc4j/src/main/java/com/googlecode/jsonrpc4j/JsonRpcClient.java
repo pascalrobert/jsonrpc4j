@@ -126,7 +126,9 @@ public class JsonRpcClient {
         }
 
         // convert it to a return object
-        if (jsonObject.has("result")) {
+        if (jsonObject.has("result")
+        	&& !jsonObject.get("result").isNull()
+        	&& jsonObject.get("result")!=null) {
             return mapper.readValue(
             	jsonObject.get("result"), TypeFactory.type(returnType));
         }
