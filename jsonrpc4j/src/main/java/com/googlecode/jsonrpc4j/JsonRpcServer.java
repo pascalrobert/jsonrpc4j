@@ -380,12 +380,11 @@ public class JsonRpcServer {
 					}
 
 					// bail if param name wasn't found
-					if (paramName==null) {
+					if (paramName==null || !paramsNode.has(paramName)) {
 						found = false;
 						break;
-
 					// found it by name
-					} else if (paramsNode.has(paramName)) {
+					} else {
 						namedParams.add(paramsNode.get(paramName));
 					}
 				}
