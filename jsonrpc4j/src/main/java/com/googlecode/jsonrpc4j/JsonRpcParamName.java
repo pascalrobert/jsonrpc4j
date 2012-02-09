@@ -21,5 +21,5 @@ public @interface JsonRpcParamName {
      * @return the value
      */
     String value();
-    
+
 }

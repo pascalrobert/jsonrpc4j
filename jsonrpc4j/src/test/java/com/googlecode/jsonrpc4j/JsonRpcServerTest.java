@@ -40,11 +40,11 @@ public class JsonRpcServerTest {
         jsonRpcServer.handle(new ClassPathResource("jsonRpcServerNotificationTest.json").getInputStream(), baos);
         assertEquals(0, baos.size());
     }
-
-	// Call method that takes one parameter with zero, one and two parameters.
-	// Do this with both parameter list (positional) and with named parameters.
-	// Should fail when called with zero parameters and when called with two
-	// parameters as long as allowExtraParams not set.
+	
+	
+	/////
+	/// INDEXED PARAMETER TESTS BELOW
+	/////
 	
 	@Test
 	public void callMethodWithTooFewParameters() throws Exception {		
@@ -53,8 +53,8 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 		
-		// Method not found
-		assertEquals(-32601, json.get("error").get("code").getIntValue());		
+		// Invalid parameters
+		assertEquals(-32602, json.get("error").get("code").getIntValue());		
 	}
 	
 	@Test
@@ -74,55 +74,20 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 		
-		// Method not found
-		assertEquals(-32601, json.get("error").get("code").getIntValue());
+		// Invalid parameters
+		assertEquals(-32602, json.get("error").get("code").getIntValue());
 	}
-	
-	@Test
-	public void callMethodWithTooFewParametersNamed() throws Exception {
-		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerTooFewParamsNamedTest.json").getInputStream(), baos);
-
-		String response = baos.toString(JSON_ENCODING);
-		JsonNode json = mapper.readTree(response);
-		
-		// Method not found
-		assertEquals(-32601, json.get("error").get("code").getIntValue());		
-	}
-	
-	@Test
-	public void callMethodExactNumberOfParametersNamed() throws Exception {
-		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerExactParamsNamedTest.json").getInputStream(), baos);
-
-		String response = baos.toString(JSON_ENCODING);
-		JsonNode json = mapper.readTree(response);
-		
-		assertEquals("success", json.get("result").getTextValue());
-	}
-	
-	@Test
-	public void callMethodWithExtraParameterNamed() throws Exception {
-		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerExtraParamsNamedTest.json").getInputStream(), baos);
-
-		String response = baos.toString(JSON_ENCODING);
-		JsonNode json = mapper.readTree(response);
-		
-		// Method not found
-		assertEquals(-32601, json.get("error").get("code").getIntValue());
-	}
-	
-	// Repeat tests with allowExtraParams set to true.
-	// Should now return "success" even when called with two parameters.
 	
 	@Test
 	public void callMethodWithTooFewParametersAllowOn() throws Exception {
-		jsonRpcServer.setAllowExtraParams(true);
+		jsonRpcServer.setAllowLessParams(true);
 		jsonRpcServer.handle(new ClassPathResource("jsonRpcServerTooFewParamsTest.json").getInputStream(), baos);
 
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 		
-		// Method not found
-		assertEquals(-32601, json.get("error").get("code").getIntValue());		
+		// Invalid parameters
+		assertEquals("success", json.get("result").getTextValue());
 	}
 	
 	@Test
@@ -148,6 +113,116 @@ public class JsonRpcServerTest {
 	}
 	
 	@Test
+	public void callOverloadedMethodNoParams() throws Exception {
+		jsonRpcServer.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodNoParamsTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("noParam", json.get("result").getTextValue());
+	}
+	
+	@Test
+	public void callOverloadedMethodOneStringParam() throws Exception {
+		jsonRpcServer.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodOneStringParamTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("stringParam1", json.get("result").getTextValue());
+	}
+	
+	@Test
+	public void callOverloadedMethodOneIntParam() throws Exception {
+		jsonRpcServer.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodOneIntParamTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("intParam1", json.get("result").getTextValue());
+	}
+	
+	@Test
+	public void callOverloadedMethodTwoStringParams() throws Exception {
+		jsonRpcServer.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodTwoStringParamsTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("stringParam1, stringParam2", json.get("result").getTextValue());
+	}
+	
+	@Test
+	public void callOverloadedMethodTwoIntParams() throws Exception {
+		jsonRpcServer.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodTwoIntParamsTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("intParam1, intParam2", json.get("result").getTextValue());
+	}
+	
+	@Test
+	public void callOverloadedMethodExtraParams() throws Exception {
+		jsonRpcServer.setAllowExtraParams(true);
+		jsonRpcServer.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodExtraParamsTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("stringParam1, stringParam2", json.get("result").getTextValue());
+	}
+	
+	@Test
+	public void callOverloadedMethodExtraParamsAllowOn() throws Exception {
+		jsonRpcServer.setAllowExtraParams(true);
+		jsonRpcServer.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodExtraParamsTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("stringParam1, stringParam2", json.get("result").getTextValue());
+	}
+	
+	
+	/////
+	/// NAMED PARAMETER TESTS BELOW
+	/////
+
+	
+	@Test
+	public void callMethodWithTooFewParametersNamed() throws Exception {
+		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerTooFewParamsNamedTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+		
+		// Invalid parameters
+		assertEquals(-32602, json.get("error").get("code").getIntValue());		
+	}
+	
+	@Test
+	public void callMethodExactNumberOfParametersNamed() throws Exception {
+		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerExactParamsNamedTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+		
+		assertEquals("success", json.get("result").getTextValue());
+	}
+	
+	@Test
+	public void callMethodWithExtraParameterNamed() throws Exception {
+		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerExtraParamsNamedTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+		
+		// Method not found
+		assertEquals(-32602, json.get("error").get("code").getIntValue());
+	}
+	
+	@Test
 	public void callMethodWithTooFewParametersNamedAllowOn() throws Exception {
 		jsonRpcServerAnnotatedParam.setAllowExtraParams(true);
 		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerTooFewParamsNamedTest.json").getInputStream(), baos);
@@ -155,8 +230,8 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 		
-		// Method not found
-		assertEquals(-32601, json.get("error").get("code").getIntValue());		
+		// Invalid parameters
+		assertEquals(-32602, json.get("error").get("code").getIntValue());
 	}
 	
 	@Test
@@ -181,21 +256,147 @@ public class JsonRpcServerTest {
 		assertEquals("success", json.get("result").getTextValue());
 	}
 	
+	@Test
+	public void callOverloadedMethodNoNamedParams() throws Exception {
+		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodNoParamsTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("noParam", json.get("result").getTextValue());
+	}
+	
+	@Test
+	public void callOverloadedMethodOneNamedStringParam() throws Exception {
+		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodOneStringParamTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("stringParam1", json.get("result").getTextValue());
+	}
+	
+	@Test
+	public void callOverloadedMethodOneNamedIntParam() throws Exception {
+		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodOneIntParamTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("intParam1", json.get("result").getTextValue());
+	}
+	
+	@Test
+	public void callOverloadedMethodTwoNamedStringParams() throws Exception {
+		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodTwoStringParamsTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("stringParam1, stringParam2", json.get("result").getTextValue());
+	}
+	
+	@Test
+	public void callOverloadedMethodTwoNamedIntParams() throws Exception {
+		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodTwoIntParamsTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("intParam1, intParam2", json.get("result").getTextValue());
+	}
+	
+	@Test
+	public void callOverloadedMethodNamedExtraParams() throws Exception {
+		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodNamedExtraParamsTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+		
+		// Invalid parameters
+		assertEquals(-32602, json.get("error").get("code").getIntValue());
+	}
+	
+	@Test
+	public void callOverloadedMethodNamedExtraParamsAllowOn() throws Exception {
+		jsonRpcServerAnnotatedParam.setAllowExtraParams(true);
+		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerOverLoadedMethodNamedExtraParamsTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("stringParam1, stringParam2", json.get("result").getTextValue());
+	}
+	
+	@Test
+	public void callMethodWithoutRequiredParam() throws Exception {
+		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerWithoutRequiredNamedParamsTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+		
+		// Invalid parameters
+		assertEquals(-32602, json.get("error").get("code").getIntValue());
+	}
+	
+	@Test
+	public void callMethodWithoutRequiredParamAllowOn() throws Exception {
+		jsonRpcServerAnnotatedParam.setAllowLessParams(true);
+		jsonRpcServerAnnotatedParam.handle(new ClassPathResource("jsonRpcServerWithoutRequiredNamedParamsTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertEquals("stringParam1, null", json.get("result").getTextValue());
+	}
+	
 
 	// Service and service interfaces used in test
 	
 	private interface ServiceInterface {        
-		public String testMethod(String param1); 
+		public String testMethod(String param1);
+		public String overloadedMethod();
+		public String overloadedMethod(String stringParam1);
+		public String overloadedMethod(String stringParam1, String stringParam2);
+		public String overloadedMethod(int intParam1);
+		public String overloadedMethod(int intParam1, int intParam2);
 	}
 	
 	private interface ServiceInterfaceWithParamNameAnnotaion {        
-		public String testMethod(@JsonRpcParamName("param1") String param1);        
+		public String testMethod(@JsonRpcParamName("param1") String param1);    
+		public String overloadedMethod();
+		public String overloadedMethod(@JsonRpcParamName("param1") String stringParam1);
+		public String overloadedMethod(@JsonRpcParamName("param1") String stringParam1, @JsonRpcParamName("param2") String stringParam2);
+		public String overloadedMethod(@JsonRpcParamName("param1") int intParam1);
+		public String overloadedMethod(@JsonRpcParamName("param1") int intParam1, @JsonRpcParamName("param2") int intParam2);
+		
+		public String methodWithoutRequiredParam(@JsonRpcParamName("param1") String stringParam1, @JsonRpcParamName(value="param2") String stringParam2);
 	}
 
 	private class Service implements ServiceInterface, ServiceInterfaceWithParamNameAnnotaion {
 		public String testMethod(String param1) {
 			return "success";
 		}
+		public String overloadedMethod() {
+			return "noParam";
+		}
+		public String overloadedMethod(String stringParam1) {
+			return stringParam1;
+		}
+		public String overloadedMethod(String stringParam1, String stringParam2) {
+			return stringParam1+", "+stringParam2;
+		}
+		public String overloadedMethod(int intParam1) {
+			return "intParam"+intParam1;
+		}
+		public String overloadedMethod(int intParam1, int intParam2) {
+			return "intParam"+intParam1+", intParam"+intParam2;
+		}
+
+		public String methodWithoutRequiredParam(String stringParam1, String stringParam2) {
+			return stringParam1+", "+stringParam2;
+		}
+		
 	}
 	
 }

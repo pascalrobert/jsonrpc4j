@@ -5,12 +5,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -30,6 +30,7 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.type.TypeFactory;
 import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.NullNode;
 import org.codehaus.jackson.node.ObjectNode;
 
 /**
@@ -42,8 +43,9 @@ public class JsonRpcServer {
 
     public static final String JSONRPC_RESPONSE_CONTENT_TYPE = "application/json-rpc";
 
-    private boolean rethrowExceptions = false;
-    private boolean allowExtraParams = false;
+    private boolean rethrowExceptions 	= false;
+    private boolean allowExtraParams 	= false;
+    private boolean allowLessParams		= false;
 	private ObjectMapper mapper;
 	private Object handler;
 	private Class<?> remoteInterface;
@@ -312,27 +314,9 @@ public class JsonRpcServer {
 		String methodName	= (methodNode!=null && !methodNode.isNull()) ? methodNode.getValueAsText() : null;
 		String id			= (idNode!=null && !idNode.isNull()) ? idNode.getValueAsText() : null;
 
-		// count params
-		int paramCount		= (paramsNode!=null) ? paramsNode.size() : 0;
-
 		// find methods
 		Set<Method> methods = new HashSet<Method>();
 		methods.addAll(ReflectionUtil.findMethods(getHandlerClass(), methodName));
-
-		// iterate through the methods and remove
-		// the one's who's parameter count's don't
-		// match the request exactly (unless
-		// allowExtraParams is set)
-		Iterator<Method> itr = methods.iterator();
-		while (itr.hasNext()) {
-			Method method = itr.next();
-			if ((!allowExtraParams && method.getParameterTypes().length!=paramCount) ||
-				(allowExtraParams && method.getParameterTypes().length>paramCount)) {
-				itr.remove();
-			}
-		}
-
-		// method not found
 		if (methods.isEmpty()) {
 			mapper.writeValue(ops, createErrorResponse(
 				jsonRpc, id, -32601, "Method not found", null));
@@ -340,80 +324,12 @@ public class JsonRpcServer {
 		}
 
 		// choose a method
-		Method method = null;
-		List<JsonNode> paramNodes = new ArrayList<JsonNode>();
-
-		// handle param arrays, no params
-		if (paramCount==0 || paramsNode.isArray()) {
-			method = methods.iterator().next();
-
-			// drop superfluous parameters in list if allowExtraParams is true
-			if (allowExtraParams && paramCount > method.getParameterTypes().length) {
-				paramCount = method.getParameterTypes().length;
-			}
-
-			for (int i=0; i<paramCount; i++) {
-				paramNodes.add(paramsNode.get(i));
-			}
-
-		// handle named params
-		} else if (paramsNode.isObject()) {
-
-			// loop through each method
-			for (Method m : methods) {
-
-				// get method annotations
-				Annotation[][] annotations = m.getParameterAnnotations();
-				boolean found = true;
-				List<JsonNode> namedParams = new ArrayList<JsonNode>();
-				for (int i=0; i<annotations.length; i++) {
-
-					// look for param name annotations
-					String paramName = null;
-					for (int j=0; j<annotations[i].length; j++) {
-						if (!JsonRpcParamName.class.isInstance(annotations[i][j])) {
-							continue;
-						} else {
-							paramName = JsonRpcParamName.class.cast(annotations[i][j]).value();
-							continue;
-						}
-					}
-
-					// bail if param name wasn't found
-					if (paramName==null || !paramsNode.has(paramName)) {
-						found = false;
-						break;
-					// found it by name
-					} else {
-						namedParams.add(paramsNode.get(paramName));
-					}
-				}
-
-				// did we find it?
-				if (found) {
-					method = m;
-					paramNodes.addAll(namedParams);
-					break;
-				}
-			}
-		}
-
-		// invalid parameters
+		List<JsonNode> arguments = new ArrayList<JsonNode>();
+		Method method = findBestMethodByParamsNode(methods, paramsNode, arguments);
 		if (method==null) {
 			mapper.writeValue(ops, createErrorResponse(
-				jsonRpc, id, -32602, "Invalid method parameters.", null));
+				jsonRpc, id, -32602, "Invalid method parameters", null));
 			return;
-		}
-
-		// get @JsonRpcErrors and nested @JsonRpcError annotations on method
-		Annotation[] methodAnnotations = method.getAnnotations();
-		JsonRpcError[] errorMappings = {};
-		for (Annotation a : methodAnnotations) {
-			if (!JsonRpcErrors.class.isInstance(a)) {
-				continue;
-			} else {
-				errorMappings = JsonRpcErrors.class.cast(a).value();
-			}
 		}
 
 		// invoke the method
@@ -421,37 +337,42 @@ public class JsonRpcServer {
 		ObjectNode error = null;
 		Throwable thrown = null;
 		try {
-			result = invoke(method, paramNodes);
+			result = invoke(method, arguments);
 		} catch (Throwable e) {
 			thrown = e;
 			if (InvocationTargetException.class.isInstance(e)) {
 				e = InvocationTargetException.class.cast(e).getTargetException();
 			}
+
+			// create error object node
 			error = mapper.createObjectNode();
 
-			// use error
+			// use annotations to map errors
+			JsonRpcErrors errors = ReflectionUtil.getAnnotation(method, JsonRpcErrors.class);
 			boolean errorMapped = false;
-			for (JsonRpcError em : errorMappings) {
-				if (em.exception().isInstance(e)) {
-					error.put("code", em.code());
-					error.put("message", em.message());
-
-					// get data from annotation
-					String data = em.data();
-
-					// default to exception message
-					if("".equals(data)) {
-						data = e.getMessage();
+			if (errors!=null) {
+				for (JsonRpcError em : errors.value()) {
+					if (em.exception().isInstance(e)) {
+						error.put("code", em.code());
+						error.put("message", em.message());
+	
+						// get data from annotation
+						String data = em.data();
+	
+						// default to exception message
+						if("".equals(data)) {
+							data = e.getMessage();
+						}
+	
+						// only add the data if we have a value
+						if (data != null && !"".equals(data)) {
+							error.put("data", data);
+						}
+	
+						// we used an annotation for the exception
+						errorMapped = true;
+						break;
 					}
-
-					// only add the data if we have a value
-					if (data != null && !"".equals(data)) {
-						error.put("data", data);
-					}
-
-					// we used an annotation for the exception
-					errorMapped = true;
-					break;
 				}
 			}
 
@@ -550,11 +471,270 @@ public class JsonRpcServer {
 	}
 
 	/**
-	 * Indicates whether or not the server is re-throwing exceptions.
-	 * @return true if re-throwing, false otherwise
+	 * Finds the {@link Method} for the given arguments and returns
+	 * it or null if none were found.
+	 * @param methods the {@link Method}s
+	 * @param paramCount the number of params expected
+	 * @return the best method
 	 */
-	public boolean isRethrowExceptions() {
-		return rethrowExceptions;
+	private Method findBestMethodByParamsNode(Set<Method> methods, JsonNode paramsNode, List<JsonNode> arguments) {
+
+		// no parameters
+		if (paramsNode==null || paramsNode.isNull()) {
+			return findBestMethodByParamCount(methods, 0, null, arguments);
+
+		// array parameters
+		} else if (paramsNode.isArray()) {
+			return findBestMethodByParamCount(methods, paramsNode.size(), ArrayNode.class.cast(paramsNode), arguments);
+
+		// named parameters
+		} else if (paramsNode.isObject()) {
+			Set<String> fieldNames = new HashSet<String>();
+			Iterator<String> itr=paramsNode.getFieldNames();
+			while (itr.hasNext()) {
+				fieldNames.add(itr.next());
+			}
+			return findBestMethodByParamNames(methods, fieldNames, ObjectNode.class.cast(paramsNode), arguments);
+
+		}
+		
+		// unknown params node type
+		throw new IllegalArgumentException("Unknown params node type: "+paramsNode.toString());
+	}
+
+	/**
+	 * TODO: document
+	 * @param methods
+	 * @param paramCount
+	 * @return
+	 */
+	private Method findBestMethodByParamCount(
+		Set<Method> methods, int paramCount, ArrayNode paramNodes, List<JsonNode> arguments) {
+
+		// determine param count
+		int bestParamNumDiff		= Integer.MAX_VALUE;
+		Set<Method> matchedMethods	= new HashSet<Method>();
+
+		// check every method
+		for (Method method : methods) {
+
+			// get parameter types
+			Class<?>[] paramTypes = method.getParameterTypes();
+			int paramNumDiff = paramTypes.length-paramCount;
+
+			// we've already found a better match
+			if (Math.abs(paramNumDiff)>Math.abs(bestParamNumDiff)) {
+				continue;
+
+			// we don't allow extra params
+			} else if (
+				!allowExtraParams && paramNumDiff<0
+				|| !allowLessParams && paramNumDiff>0) {
+				continue;
+
+			// check the parameters
+			} else {
+				if (Math.abs(paramNumDiff)<Math.abs(bestParamNumDiff)) {
+					matchedMethods.clear();
+				}
+				matchedMethods.add(method);
+				bestParamNumDiff = paramNumDiff;
+				continue;
+			}
+		}
+
+		// bail early
+		if (matchedMethods.isEmpty()) {
+			return null;
+		}
+		
+		// now narrow it down to the best method
+		// based on argument types
+		Method bestMethod = null;
+		if (matchedMethods.size()==1 || paramNodes.size()==0) {
+			bestMethod = matchedMethods.iterator().next();
+	
+		} else {
+
+			// check the matching methods for
+			// matching parameter types
+			int mostMatches	= -1;
+			for (Method method : matchedMethods) {
+				List<Class<?>> parameterTypes = ReflectionUtil.getParameterTypes(method);
+				int numMatches = 0;
+				for (int i=0; i<parameterTypes.size() && i<paramNodes.size(); i++) {
+					if (isMatchingType(paramNodes.get(i), parameterTypes.get(i))) {
+						numMatches++;
+					}
+				}
+				if (numMatches>mostMatches) {
+					mostMatches = numMatches;
+					bestMethod = method;
+				}
+			}
+		}
+
+		// now fill arguments
+		int numParameters = bestMethod.getParameterTypes().length;
+		int numParams = paramNodes.size();
+		for (int i=0; i<numParameters; i++) {
+			if (i<numParams) {
+				arguments.add(paramNodes.get(i));
+			} else {
+				arguments.add(NullNode.getInstance());
+			}
+		}
+
+		// return the method
+		return bestMethod;
+	}
+
+	/**
+	 * TODO: document
+	 * @param methods
+	 * @param paramNames
+	 * @return
+	 */
+	private Method findBestMethodByParamNames(
+		Set<Method> methods, Set<String> paramNames, ObjectNode paramNodes, List<JsonNode> arguments) {
+
+		// determine param count
+		int maxMatchingParams 					= -1;
+		int maxMatchingParamTypes				= -1;
+		Method bestMethod 						= null;
+		List<JsonRpcParamName> bestAnnotations	= null;
+
+		for (Method method : methods) {
+
+			// get parameter types
+			List<Class<?>> parameterTypes = ReflectionUtil.getParameterTypes(method);
+
+			// bail early if possible
+			if (!allowExtraParams && paramNames.size()>parameterTypes.size()) {
+				continue;
+			} else if (!allowLessParams && paramNames.size()<parameterTypes.size()) {
+				continue;
+			}
+
+			// get parameter annotations
+			List<List<JsonRpcParamName>> methodAnnotations = ReflectionUtil
+				.getParameterAnnotations(method, JsonRpcParamName.class);
+
+			// collapse matrix to simple array
+			// and ensure we have names for each param
+			List<JsonRpcParamName> annotations = new ArrayList<JsonRpcParamName>(methodAnnotations.size());
+			for (List<JsonRpcParamName> annots : methodAnnotations) {
+				if (annots.size()>0) {
+					annotations.add(annots.get(0));
+				} else {
+					// all parameters must be named for this to work
+					continue;
+				}
+			}
+
+			// count the matching params for this method
+			int numMatchingParamTypes = 0;
+			int numMatchingParams = 0;
+			for (int i=0; i<annotations.size(); i++) {
+				JsonRpcParamName annotation	= annotations.get(i);
+				String paramName			= annotation.value();
+				boolean hasParamName 		= paramNames.contains(paramName);
+
+				if (hasParamName && isMatchingType(paramNodes.get(paramName), parameterTypes.get(i))) {
+					numMatchingParamTypes++;
+					numMatchingParams++;
+					
+				} else if (hasParamName) {
+					numMatchingParams++;
+					
+				}
+			}
+
+			// check for exact param matches
+			// bail early if possible
+			if (!allowExtraParams && numMatchingParams>parameterTypes.size()) {
+				continue;
+			} else if (!allowLessParams && numMatchingParams<parameterTypes.size()) {
+				continue;
+			}
+
+			// better match
+			if (numMatchingParams>maxMatchingParams
+				|| (numMatchingParams==maxMatchingParams && numMatchingParamTypes>maxMatchingParamTypes)) {
+				bestMethod 				= method;
+				maxMatchingParams 		= numMatchingParams;
+				maxMatchingParamTypes 	= numMatchingParamTypes;
+				bestAnnotations 		= annotations;
+			}
+		}
+
+		// bail early
+		if (bestMethod==null) {
+			return null;
+		}
+
+		// now fill arguments
+		int numParameters = bestMethod.getParameterTypes().length;
+		for (int i=0; i<numParameters; i++) {
+			String paramName = bestAnnotations.get(i).value();
+			if (paramNames.contains(paramName)) {
+				arguments.add(paramNodes.get(paramName));
+			} else {
+				arguments.add(NullNode.getInstance());
+			}
+		}
+
+		// return the method
+		return bestMethod;
+	}
+
+	/**
+	 * Determines whether or not the given {@link JsonNode} matches
+	 * the given type.  This method is limitted to a few java types
+	 * only and shouldn't be used to determine with great accuracy
+	 * whether or not the types match.
+	 * @param node
+	 * @param type
+	 * @return
+	 */
+	private boolean isMatchingType(JsonNode node, Class<?> type) {
+		
+		if (node.isNull()) {
+			return true;
+			
+		} else if (node.isNumber()) {
+			return Number.class.isAssignableFrom(type);
+			
+		} else if (node.isTextual()) {
+			return String.class.isAssignableFrom(type);
+			
+		} else if (node.isArray() && type.isArray()) {
+			return (node.size()>0) 
+				? isMatchingType(node.get(0), type.getComponentType())
+				: false;
+			
+		} else if (node.isArray()) {
+			return type.isArray() || Collection.class.isAssignableFrom(type);
+			
+		} else if (node.isBinary()) {
+			return byte[].class.isAssignableFrom(type)
+				|| Byte[].class.isAssignableFrom(type)
+				|| char[].class.isAssignableFrom(type)
+				|| Character[].class.isAssignableFrom(type);
+			
+		} else if (node.isBoolean()) {
+			return boolean.class.isAssignableFrom(type)
+				|| Boolean.class.isAssignableFrom(type);
+			
+		} else if (node.isObject() || node.isPojo()) {
+			return !type.isPrimitive()
+				&& !String.class.isAssignableFrom(type)
+				&& !Number.class.isAssignableFrom(type)
+				&& !Boolean.class.isAssignableFrom(type);
+		}
+
+		// not sure if it's a matching type
+		return false;
 	}
 
 	/**
@@ -563,10 +743,6 @@ public class JsonRpcServer {
 	 */
 	public void setRethrowExceptions(boolean rethrowExceptions) {
 		this.rethrowExceptions = rethrowExceptions;
-	}
-
-	public boolean isAllowExtraParams() {
-		return allowExtraParams;
 	}
 	
 	/**
@@ -577,4 +753,12 @@ public class JsonRpcServer {
 	public void setAllowExtraParams(boolean allowExtraParams) {
 		this.allowExtraParams = allowExtraParams;
 	}
+
+	/**
+	 * @param allowLessParams the allowLessParams to set
+	 */
+	public void setAllowLessParams(boolean allowLessParams) {
+		this.allowLessParams = allowLessParams;
+	}
+
 }
