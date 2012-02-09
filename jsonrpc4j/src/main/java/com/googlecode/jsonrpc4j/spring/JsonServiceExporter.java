@@ -37,6 +37,7 @@ public class JsonServiceExporter
     private ApplicationContext applicationContext;
     private boolean rethrowExceptions = false;
     private boolean allowExtraParams = false;
+    private boolean allowLessParams	= false;
 
     /**
      * {@inheritDoc}
@@ -65,6 +66,7 @@ public class JsonServiceExporter
 			objectMapper, getService(), getServiceInterface());
 		jsonRpcServer.setRethrowExceptions(rethrowExceptions);
 		jsonRpcServer.setAllowExtraParams(allowExtraParams);
+		jsonRpcServer.setAllowLessParams(allowLessParams);
     }
     
     /**
@@ -102,4 +104,12 @@ public class JsonServiceExporter
 	public void setAllowExtraParams(boolean allowExtraParams) {
 		this.allowExtraParams = allowExtraParams;
 	}
+
+	/**
+	 * @param allowLessParams the allowLessParams to set
+	 */
+	public void setAllowLessParams(boolean allowLessParams) {
+		this.allowLessParams = allowLessParams;
+	}
+
 }
