@@ -7,7 +7,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -22,30 +21,29 @@ import com.googlecode.jsonrpc4j.JsonRpcServer;
  * according to the JSON-RPC proposal specified at:
  * <a href="http://groups.google.com/group/json-rpc">
  * http://groups.google.com/group/json-rpc</a>.
- * 
- * @author brian.dilley@gmail.com
  *
  */
-public class JsonServiceExporter 
-    extends RemoteExporter 
-    implements HttpRequestHandler,
-    InitializingBean,
-    ApplicationContextAware {
+public class JsonServiceExporter
+	extends RemoteExporter
+	implements HttpRequestHandler,
+	InitializingBean,
+	ApplicationContextAware {
 
-    private ObjectMapper objectMapper;
-    private JsonRpcServer jsonRpcServer;
-    private ApplicationContext applicationContext;
-    private boolean rethrowExceptions = false;
-    private boolean allowExtraParams = false;
-    private boolean allowLessParams	= false;
+	private ObjectMapper objectMapper;
+	private JsonRpcServer jsonRpcServer;
+	private ApplicationContext applicationContext;
+	private boolean backwardsComaptible = true;
+	private boolean rethrowExceptions = false;
+	private boolean allowExtraParams = false;
+	private boolean allowLessParams	= false;
 
-    /**
-     * {@inheritDoc}
-     */
-    public void afterPropertiesSet() 
-        throws Exception {
+	/**
+	 * {@inheritDoc}
+	 */
+	public void afterPropertiesSet()
+		throws Exception {
 
-    	// find the ObjectMapper
+		// find the ObjectMapper
 		if (objectMapper==null
 			&& applicationContext!=null
 			&& applicationContext.containsBean("objectMapper")) {
@@ -64,26 +62,26 @@ public class JsonServiceExporter
 		// create the server
 		jsonRpcServer = new JsonRpcServer(
 			objectMapper, getService(), getServiceInterface());
+		jsonRpcServer.setBackwardsComaptible(backwardsComaptible);
 		jsonRpcServer.setRethrowExceptions(rethrowExceptions);
 		jsonRpcServer.setAllowExtraParams(allowExtraParams);
 		jsonRpcServer.setAllowLessParams(allowLessParams);
-    }
-    
-    /**
-     * {@inheritDoc}
-     */
-    public void handleRequest(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, 
-        IOException {
-    	jsonRpcServer.handle(request, response);
-        response.getOutputStream().flush();
-    }
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-	public void setApplicationContext(ApplicationContext applicationContext)
-		throws BeansException {
+	/**
+	 * {@inheritDoc}
+	 */
+	public void handleRequest(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException,
+		IOException {
+		jsonRpcServer.handle(request, response);
+		response.getOutputStream().flush();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}
 
@@ -95,12 +93,22 @@ public class JsonServiceExporter
 	}
 
 	/**
+	 * @param backwardsComaptible the backwardsComaptible to set
+	 */
+	protected void setBackwardsComaptible(boolean backwardsComaptible) {
+		this.backwardsComaptible = backwardsComaptible;
+	}
+
+	/**
 	 * @param rethrowExceptions the rethrowExceptions to set
 	 */
 	public void setRethrowExceptions(boolean rethrowExceptions) {
 		this.rethrowExceptions = rethrowExceptions;
 	}
 
+	/**
+	 * @param allowExtraParams the allowExtraParams to set
+	 */
 	public void setAllowExtraParams(boolean allowExtraParams) {
 		this.allowExtraParams = allowExtraParams;
 	}

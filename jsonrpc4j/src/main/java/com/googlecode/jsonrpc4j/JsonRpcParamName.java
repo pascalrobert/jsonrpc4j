@@ -8,18 +8,15 @@ import java.lang.annotation.Target;
 /**
  * Annotation for annotating service parameters as
  * JsonRpc params by name.
- * 
- * @author brian.dilley@gmail.com
  *
  */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface JsonRpcParamName {
-    
-    /**
-     * The value of the parameter name.
-     * @return the value
-     */
-    String value();
+
+	/**
+	 * The value of the parameter name.
+	 */
+	String value();
 
 }

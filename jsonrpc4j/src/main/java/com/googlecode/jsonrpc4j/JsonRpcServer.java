@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -23,10 +22,7 @@ import javax.portlet.ResourceResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.type.TypeFactory;
 import org.codehaus.jackson.node.ArrayNode;
@@ -34,18 +30,19 @@ import org.codehaus.jackson.node.NullNode;
 import org.codehaus.jackson.node.ObjectNode;
 
 /**
- * A JSON-RPC request server reads JSON-RPC requests from an 
+ * A JSON-RPC request server reads JSON-RPC requests from an
  * input stream and writes responses to an output stream.
  */
 public class JsonRpcServer {
 
 	private static final Logger LOGGER = Logger.getLogger(JsonRpcServer.class.getName());
 
-    public static final String JSONRPC_RESPONSE_CONTENT_TYPE = "application/json-rpc";
+	public static final String JSONRPC_RESPONSE_CONTENT_TYPE = "application/json-rpc";
 
-    private boolean rethrowExceptions 	= false;
-    private boolean allowExtraParams 	= false;
-    private boolean allowLessParams		= false;
+	private boolean backwardsComaptible	= true;
+	private boolean rethrowExceptions 	= false;
+	private boolean allowExtraParams 	= false;
+	private boolean allowLessParams		= false;
 	private ObjectMapper mapper;
 	private Object handler;
 	private Class<?> remoteInterface;
@@ -98,21 +95,17 @@ public class JsonRpcServer {
 	 * Handles a portlet request.
 	 * @param request the {@link ResourceRequest}
 	 * @param response the {@link ResourceResponse}
-	 * @throws JsonParseException on error
-	 * @throws JsonMappingException on error
 	 * @throws IOException on error
 	 */
 	public void handle(ResourceRequest request, ResourceResponse response)
-		throws JsonParseException,
-		JsonMappingException,
-		IOException {
+		throws IOException {
 
-    	// set response type
-    	response.setContentType(JSONRPC_RESPONSE_CONTENT_TYPE);
- 
-    	// setup streams
-    	InputStream input 	= null;
-    	OutputStream output	= response.getPortletOutputStream();
+		// set response type
+		response.setContentType(JSONRPC_RESPONSE_CONTENT_TYPE);
+
+		// setup streams
+		InputStream input 	= null;
+		OutputStream output	= response.getPortletOutputStream();
 
 		// POST
 		if (request.getMethod().equals("POST")) {
@@ -139,21 +132,17 @@ public class JsonRpcServer {
 	 * Handles a servlet request.
 	 * @param request the {@link HttpServletRequest}
 	 * @param response the {@link HttpServletResponse}
-	 * @throws JsonParseException on error
-	 * @throws JsonMappingException on error
 	 * @throws IOException on error
 	 */
 	public void handle(HttpServletRequest request, HttpServletResponse response)
-		throws JsonParseException,
-		JsonMappingException,
-		IOException {
+		throws IOException {
 
-    	// set response type
-    	response.setContentType(JSONRPC_RESPONSE_CONTENT_TYPE);
- 
-    	// setup streams
-    	InputStream input 	= null;
-    	OutputStream output	= response.getOutputStream();
+		// set response type
+		response.setContentType(JSONRPC_RESPONSE_CONTENT_TYPE);
+
+		// setup streams
+		InputStream input 	= null;
+		OutputStream output	= response.getOutputStream();
 
 		// POST
 		if (request.getMethod().equals("POST")) {
@@ -183,14 +172,10 @@ public class JsonRpcServer {
 	 * are written to the given {@link OutputStream}.
 	 * @param ips the {@link InputStream}
 	 * @param ops the {@link OutputStream}
-	 * @throws JsonParseException
-	 * @throws JsonMappingException
-	 * @throws IOException
+	 * @throws IOException on error
 	 */
 	public void handle(InputStream ips, OutputStream ops)
-		throws JsonParseException,
-		JsonMappingException,
-		IOException {
+		throws IOException {
 		handleNode(mapper.readValue(ips, JsonNode.class), ops);
 	}
 
@@ -200,12 +185,10 @@ public class JsonRpcServer {
 	 * @param id the id
 	 * @param params the base64 encoded params
 	 * @return the {@link InputStream}
-	 * @throws UnsupportedEncodingException on error
 	 * @throws IOException on error
 	 */
 	private InputStream createInputStream(String method, String id, String params)
-		throws UnsupportedEncodingException,
-		IOException {
+		throws IOException {
 
 		// decode parameters
 		String decodedParams = URLDecoder.decode(
@@ -238,14 +221,10 @@ public class JsonRpcServer {
 	 * responses to the given {@link OutputStream}.
 	 * @param node the {@link JsonNode}
 	 * @param ops the {@link OutputStream}
-	 * @throws JsonGenerationException
-	 * @throws JsonMappingException
-	 * @throws IOException
+	 * @throws IOException on error
 	 */
 	private void handleNode(JsonNode node, OutputStream ops)
-		throws JsonGenerationException,
-		JsonMappingException,
-		IOException {
+		throws IOException {
 
 		// handle objects
 		if (node.isObject()) {
@@ -267,14 +246,10 @@ public class JsonRpcServer {
 	 * responses to the given {@link OutputStream}.
 	 * @param node the {@link JsonNode}
 	 * @param ops the {@link OutputStream}
-	 * @throws JsonGenerationException
-	 * @throws JsonMappingException
-	 * @throws IOException
+	 * @throws IOException on error
 	 */
 	private void handleArray(ArrayNode node, OutputStream ops)
-		throws JsonGenerationException,
-		JsonMappingException,
-		IOException {
+		throws IOException {
 
 		// loop through each array element
 		for (int i=0; i<node.size(); i++) {
@@ -287,17 +262,13 @@ public class JsonRpcServer {
 	 * responses to the given {@link OutputStream}.
 	 * @param node the {@link JsonNode}
 	 * @param ops the {@link OutputStream}
-	 * @throws JsonGenerationException
-	 * @throws JsonMappingException
-	 * @throws IOException
+	 * @throws IOException on error
 	 */
 	private void handleObject(ObjectNode node, OutputStream ops)
-		throws JsonGenerationException,
-		JsonMappingException,
-		IOException {
+		throws IOException {
 
 		// validate request
-		if (!node.has("jsonrpc") || !node.has("method")) {
+		if (!backwardsComaptible && !node.has("jsonrpc") || !node.has("method")) {
 			mapper.writeValue(ops, createErrorResponse(
 				"jsonrpc", "null", -32600, "Invalid Request", null));
 			return;
@@ -310,7 +281,7 @@ public class JsonRpcServer {
 		JsonNode paramsNode		= node.get("params");
 
 		// get node values
-		String jsonRpc		= (jsonPrcNode!=null && !jsonPrcNode.isNull()) ? jsonPrcNode.getValueAsText() : null;
+		String jsonRpc		= (jsonPrcNode!=null && !jsonPrcNode.isNull()) ? jsonPrcNode.getValueAsText() : "2.0";
 		String methodName	= (methodNode!=null && !methodNode.isNull()) ? methodNode.getValueAsText() : null;
 		String id			= (idNode!=null && !idNode.isNull()) ? idNode.getValueAsText() : null;
 
@@ -324,9 +295,8 @@ public class JsonRpcServer {
 		}
 
 		// choose a method
-		List<JsonNode> arguments = new ArrayList<JsonNode>();
-		Method method = findBestMethodByParamsNode(methods, paramsNode, arguments);
-		if (method==null) {
+		MethodAndArgs methodArgs = findBestMethodByParamsNode(methods, paramsNode);
+		if (methodArgs==null) {
 			mapper.writeValue(ops, createErrorResponse(
 				jsonRpc, id, -32602, "Invalid method parameters", null));
 			return;
@@ -337,7 +307,7 @@ public class JsonRpcServer {
 		ObjectNode error = null;
 		Throwable thrown = null;
 		try {
-			result = invoke(method, arguments);
+			result = invoke(methodArgs.method, methodArgs.arguments);
 		} catch (Throwable e) {
 			thrown = e;
 			if (InvocationTargetException.class.isInstance(e)) {
@@ -348,27 +318,27 @@ public class JsonRpcServer {
 			error = mapper.createObjectNode();
 
 			// use annotations to map errors
-			JsonRpcErrors errors = ReflectionUtil.getAnnotation(method, JsonRpcErrors.class);
+			JsonRpcErrors errors = ReflectionUtil.getAnnotation(methodArgs.method, JsonRpcErrors.class);
 			boolean errorMapped = false;
 			if (errors!=null) {
 				for (JsonRpcError em : errors.value()) {
 					if (em.exception().isInstance(e)) {
 						error.put("code", em.code());
 						error.put("message", em.message());
-	
+
 						// get data from annotation
 						String data = em.data();
-	
+
 						// default to exception message
 						if("".equals(data)) {
 							data = e.getMessage();
 						}
-	
+
 						// only add the data if we have a value
 						if (data != null && !"".equals(data)) {
 							error.put("data", data);
 						}
-	
+
 						// we used an annotation for the exception
 						errorMapped = true;
 						break;
@@ -418,19 +388,13 @@ public class JsonRpcServer {
 	 * @param m the method to invoke
 	 * @param params the params to pass to the method
 	 * @return the return value (or null if no return)
-	 * @throws JsonParseException
-	 * @throws JsonMappingException
-	 * @throws IOException
-	 * @throws IllegalArgumentException
-	 * @throws IllegalAccessException
-	 * @throws InvocationTargetException
+	 * @throws IOException on error
+	 * @throws IllegalAccessException on error
+	 * @throws InvocationTargetException on error
 	 */
 	private JsonNode invoke(Method m, List<JsonNode> params)
-		throws JsonParseException,
-		JsonMappingException,
-		IOException, 
-		IllegalArgumentException, 
-		IllegalAccessException, 
+		throws IOException,
+		IllegalAccessException,
 		InvocationTargetException {
 
 		// convert the parameters
@@ -447,7 +411,7 @@ public class JsonRpcServer {
 	}
 
 	/**
-	 * Convenience method for creating an error response
+	 * Convenience method for creating an error response.
 	 * @param jsonRpc the jsonrpc string
 	 * @param id the id
 	 * @param code the error code
@@ -471,21 +435,22 @@ public class JsonRpcServer {
 	}
 
 	/**
-	 * Finds the {@link Method} for the given arguments and returns
-	 * it or null if none were found.
+	 * Finds the {@link Method} from the supplied {@link Set} that
+	 * best matches the rest of the arguments supplied and returns
+	 * it as a {@link MethodAndArgs} class.
 	 * @param methods the {@link Method}s
-	 * @param paramCount the number of params expected
-	 * @return the best method
+	 * @param paramsNode the {@link JsonNode} passed as the parameters
+	 * @return the {@link MethodAndArgs}
 	 */
-	private Method findBestMethodByParamsNode(Set<Method> methods, JsonNode paramsNode, List<JsonNode> arguments) {
+	private MethodAndArgs findBestMethodByParamsNode(Set<Method> methods, JsonNode paramsNode) {
 
 		// no parameters
 		if (paramsNode==null || paramsNode.isNull()) {
-			return findBestMethodByParamCount(methods, 0, null, arguments);
+			return findBestMethodUsingParamIndexes(methods, 0, null);
 
 		// array parameters
 		} else if (paramsNode.isArray()) {
-			return findBestMethodByParamCount(methods, paramsNode.size(), ArrayNode.class.cast(paramsNode), arguments);
+			return findBestMethodUsingParamIndexes(methods, paramsNode.size(), ArrayNode.class.cast(paramsNode));
 
 		// named parameters
 		} else if (paramsNode.isObject()) {
@@ -494,22 +459,25 @@ public class JsonRpcServer {
 			while (itr.hasNext()) {
 				fieldNames.add(itr.next());
 			}
-			return findBestMethodByParamNames(methods, fieldNames, ObjectNode.class.cast(paramsNode), arguments);
+			return findBestMethodUsingParamNames(methods, fieldNames, ObjectNode.class.cast(paramsNode));
 
 		}
-		
+
 		// unknown params node type
 		throw new IllegalArgumentException("Unknown params node type: "+paramsNode.toString());
 	}
 
 	/**
-	 * TODO: document
-	 * @param methods
-	 * @param paramCount
-	 * @return
+	 * Finds the {@link Method} from the supplied {@link Set} that
+	 * best matches the rest of the arguments supplied and returns
+	 * it as a {@link MethodAndArgs} class.
+	 * @param methods the {@link Method}s
+	 * @param paramCount the number of expect parameters
+	 * @param paramNodes the parameters for matching types
+	 * @return the {@link MethodAndArgs}
 	 */
-	private Method findBestMethodByParamCount(
-		Set<Method> methods, int paramCount, ArrayNode paramNodes, List<JsonNode> arguments) {
+	private MethodAndArgs findBestMethodUsingParamIndexes(
+		Set<Method> methods, int paramCount, ArrayNode paramNodes) {
 
 		// determine param count
 		int bestParamNumDiff		= Integer.MAX_VALUE;
@@ -547,13 +515,13 @@ public class JsonRpcServer {
 		if (matchedMethods.isEmpty()) {
 			return null;
 		}
-		
+
 		// now narrow it down to the best method
 		// based on argument types
 		Method bestMethod = null;
 		if (matchedMethods.size()==1 || paramNodes.size()==0) {
 			bestMethod = matchedMethods.iterator().next();
-	
+
 		} else {
 
 			// check the matching methods for
@@ -574,29 +542,36 @@ public class JsonRpcServer {
 			}
 		}
 
+		// create return
+		MethodAndArgs ret = new MethodAndArgs();
+		ret.method = bestMethod;
+
 		// now fill arguments
 		int numParameters = bestMethod.getParameterTypes().length;
 		int numParams = paramNodes.size();
 		for (int i=0; i<numParameters; i++) {
 			if (i<numParams) {
-				arguments.add(paramNodes.get(i));
+				ret.arguments.add(paramNodes.get(i));
 			} else {
-				arguments.add(NullNode.getInstance());
+				ret.arguments.add(NullNode.getInstance());
 			}
 		}
 
 		// return the method
-		return bestMethod;
+		return ret;
 	}
 
 	/**
-	 * TODO: document
-	 * @param methods
-	 * @param paramNames
-	 * @return
+	 * Finds the {@link Method} from the supplied {@link Set} that
+	 * best matches the rest of the arguments supplied and returns
+	 * it as a {@link MethodAndArgs} class.
+	 * @param methods the {@link Method}s
+	 * @param paramNames the parameter names
+	 * @param paramNodes the parameters for matching types
+	 * @return the {@link MethodAndArgs}
 	 */
-	private Method findBestMethodByParamNames(
-		Set<Method> methods, Set<String> paramNames, ObjectNode paramNodes, List<JsonNode> arguments) {
+	private MethodAndArgs findBestMethodUsingParamNames(
+		Set<Method> methods, Set<String> paramNames, ObjectNode paramNodes) {
 
 		// determine param count
 		int maxMatchingParams 					= -1;
@@ -643,10 +618,10 @@ public class JsonRpcServer {
 				if (hasParamName && isMatchingType(paramNodes.get(paramName), parameterTypes.get(i))) {
 					numMatchingParamTypes++;
 					numMatchingParams++;
-					
+
 				} else if (hasParamName) {
 					numMatchingParams++;
-					
+
 				}
 			}
 
@@ -673,19 +648,23 @@ public class JsonRpcServer {
 			return null;
 		}
 
+		// create return
+		MethodAndArgs ret = new MethodAndArgs();
+		ret.method = bestMethod;
+
 		// now fill arguments
 		int numParameters = bestMethod.getParameterTypes().length;
 		for (int i=0; i<numParameters; i++) {
 			String paramName = bestAnnotations.get(i).value();
 			if (paramNames.contains(paramName)) {
-				arguments.add(paramNodes.get(paramName));
+				ret.arguments.add(paramNodes.get(paramName));
 			} else {
-				arguments.add(NullNode.getInstance());
+				ret.arguments.add(NullNode.getInstance());
 			}
 		}
 
 		// return the method
-		return bestMethod;
+		return ret;
 	}
 
 	/**
@@ -693,39 +672,39 @@ public class JsonRpcServer {
 	 * the given type.  This method is limitted to a few java types
 	 * only and shouldn't be used to determine with great accuracy
 	 * whether or not the types match.
-	 * @param node
-	 * @param type
-	 * @return
+	 * @param node the {@link JsonNode}
+	 * @param type the {@link Class}
+	 * @return true if the types match, false otherwise
 	 */
 	private boolean isMatchingType(JsonNode node, Class<?> type) {
-		
+
 		if (node.isNull()) {
 			return true;
-			
+
 		} else if (node.isNumber()) {
 			return Number.class.isAssignableFrom(type);
-			
+
 		} else if (node.isTextual()) {
 			return String.class.isAssignableFrom(type);
-			
+
 		} else if (node.isArray() && type.isArray()) {
-			return (node.size()>0) 
+			return (node.size()>0)
 				? isMatchingType(node.get(0), type.getComponentType())
 				: false;
-			
+
 		} else if (node.isArray()) {
 			return type.isArray() || Collection.class.isAssignableFrom(type);
-			
+
 		} else if (node.isBinary()) {
 			return byte[].class.isAssignableFrom(type)
 				|| Byte[].class.isAssignableFrom(type)
 				|| char[].class.isAssignableFrom(type)
 				|| Character[].class.isAssignableFrom(type);
-			
+
 		} else if (node.isBoolean()) {
 			return boolean.class.isAssignableFrom(type)
 				|| Boolean.class.isAssignableFrom(type);
-			
+
 		} else if (node.isObject() || node.isPojo()) {
 			return !type.isPrimitive()
 				&& !String.class.isAssignableFrom(type)
@@ -738,13 +717,28 @@ public class JsonRpcServer {
 	}
 
 	/**
+	 * Simple inner class for the {@code findXXX} methods.
+	 */
+	private static class MethodAndArgs {
+		private Method method = null;
+		private List<JsonNode> arguments = new ArrayList<JsonNode>();
+	}
+
+	/**
+	 * @param backwardsComaptible the backwardsComaptible to set
+	 */
+	public void setBackwardsComaptible(boolean backwardsComaptible) {
+		this.backwardsComaptible = backwardsComaptible;
+	}
+
+	/**
 	 * Sets whether or not the server should re-throw exceptions.
 	 * @param rethrowExceptions true or false
 	 */
 	public void setRethrowExceptions(boolean rethrowExceptions) {
 		this.rethrowExceptions = rethrowExceptions;
 	}
-	
+
 	/**
 	 * Sets whether or not the server should allow superfluous
 	 * parameters to method calls.

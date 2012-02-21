@@ -10,7 +10,6 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.aop.framework.ProxyFactory;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -20,11 +19,16 @@ import org.springframework.remoting.support.UrlBasedRemoteAccessor;
 
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
 
+/**
+ * {@link FactoryBean} for creating a {@link UrlBasedRemoteAccessor}
+ * (aka consumer) for accessing an HTTP based JSON-RPC service.
+ *
+ */
 public class JsonProxyFactoryBean
 	extends UrlBasedRemoteAccessor
-	implements MethodInterceptor, 
-	InitializingBean, 
-	FactoryBean, 
+	implements MethodInterceptor,
+	InitializingBean,
+	FactoryBean,
 	ApplicationContextAware {
 
 	private Object				proxyObject			= null;
@@ -109,8 +113,7 @@ public class JsonProxyFactoryBean
 	/**
 	 * {@inheritDoc}
 	 */
-	public void setApplicationContext(ApplicationContext applicationContext)
-		throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}
 

@@ -8,8 +8,6 @@ import java.lang.annotation.Target;
 /**
  * Annotation for mapping exceptions in service methods to
  * custom JsonRpc errors.
- * 
- * @author Hans Jørgen Hoel (hansjorgen.hoel@nhst.no)
  *
  */
 @Target(ElementType.ANNOTATION_TYPE)
@@ -22,7 +20,7 @@ public @interface JsonRpcError {
 	Class<? extends Throwable> exception();
 
 	/**
-	 * The JsonRpc error code
+	 * The JsonRpc error code.
 	 */
 	int code();
 

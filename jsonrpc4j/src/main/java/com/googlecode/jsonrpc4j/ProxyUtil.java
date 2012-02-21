@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Utilities for create client proxies.
  */
-public class ProxyUtil {
+public abstract class ProxyUtil {
 
 	/**
 	 * Creates a {@link Proxy} of the given {@link proxyInterface}
@@ -35,7 +35,7 @@ public class ProxyUtil {
 		// create and return the proxy
 		return (T)Proxy.newProxyInstance(
 			ClassLoader.getSystemClassLoader(),
-			new Class<?>[] { proxyInterface },
+			new Class<?>[] {proxyInterface},
 			new InvocationHandler() {
 				public Object invoke(Object proxy, Method method, Object[] args)
 					throws Throwable {
@@ -65,7 +65,7 @@ public class ProxyUtil {
 		// create and return the proxy
 		return (T)Proxy.newProxyInstance(
 			classLoader,
-			new Class<?>[] { proxyInterface },
+			new Class<?>[] {proxyInterface},
 			new InvocationHandler() {
 				public Object invoke(Object proxy, Method method, Object[] args)
 					throws Throwable {

@@ -8,13 +8,14 @@ import java.lang.annotation.Target;
 /**
  * Annotation for holding an array of @JsonRpcError annotations
  * for a method.
- * 
- * @author Hans Jørgen Hoel (hansjorgen.hoel@nhst.no)
  *
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface JsonRpcErrors {
 
+	/**
+	 * The errors.
+	 */
 	JsonRpcError[] value();
 }
