@@ -342,52 +342,51 @@ public class JsonRpcServer {
 			thrown = e;
 		}
 
-		// bail if notification request
-		if (id==null) {
-			return;
-		}
-
-		// attempt to resolve the error
-		JsonError error = null;
-		if (thrown!=null) {
-
-			// get cause of exception
-			Throwable e = thrown;
-			if (InvocationTargetException.class.isInstance(e)) {
-				e = InvocationTargetException.class.cast(e).getTargetException();
-			}
-
-			// resolve error
-			if (errorResolver!=null) {
-				error = errorResolver.resolveError(
-					e, methodArgs.method, methodArgs.arguments);
+		// respond if it's not a notification request
+		if (id!=null) {
+	
+			// attempt to resolve the error
+			JsonError error = null;
+			if (thrown!=null) {
+	
+				// get cause of exception
+				Throwable e = thrown;
+				if (InvocationTargetException.class.isInstance(e)) {
+					e = InvocationTargetException.class.cast(e).getTargetException();
+				}
+	
+				// resolve error
+				if (errorResolver!=null) {
+					error = errorResolver.resolveError(
+						e, methodArgs.method, methodArgs.arguments);
+				}
+		
+				// make sure we have a JsonError
+				if (error==null) {
+					error = new JsonError(
+						0, e.getMessage(), e.getClass().getName());
+				}
 			}
 	
-			// make sure we have a JsonError
-			if (error==null) {
-				error = new JsonError(
-					0, e.getMessage(), e.getClass().getName());
+			// the resoponse object
+			ObjectNode response = null;
+	
+			// build error
+			if (error!=null) {
+				response = createErrorResponse(
+					jsonRpc, id, error.getCode(), error.getMessage(), error.getData());
+	
+			// build success
+			} else {
+				response = mapper.createObjectNode();
+				response.put("jsonrpc", jsonRpc);
+				response.put("id", id);
+				response.put("result", result);
 			}
+	
+			// write it
+			mapper.writeValue(ops, response);
 		}
-
-		// the resoponse object
-		ObjectNode response = null;
-
-		// build error
-		if (error!=null) {
-			response = createErrorResponse(
-				jsonRpc, id, error.getCode(), error.getMessage(), error.getData());
-
-		// build success
-		} else {
-			response = mapper.createObjectNode();
-			response.put("jsonrpc", jsonRpc);
-			response.put("id", id);
-			response.put("result", result);
-		}
-
-		// write it
-		mapper.writeValue(ops, response);
 
 		// log and potentially re-throw errors
 		if (thrown!=null) {
