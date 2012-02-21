@@ -4,8 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -29,6 +31,8 @@ import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.NullNode;
 import org.codehaus.jackson.node.ObjectNode;
 
+import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
+
 /**
  * A JSON-RPC request server reads JSON-RPC requests from an
  * input stream and writes responses to an output stream.
@@ -39,10 +43,11 @@ public class JsonRpcServer {
 
 	public static final String JSONRPC_RESPONSE_CONTENT_TYPE = "application/json-rpc";
 
-	private boolean backwardsComaptible	= true;
-	private boolean rethrowExceptions 	= false;
-	private boolean allowExtraParams 	= false;
-	private boolean allowLessParams		= false;
+	private boolean backwardsComaptible		= true;
+	private boolean rethrowExceptions 		= false;
+	private boolean allowExtraParams 		= false;
+	private boolean allowLessParams			= false;
+	private ErrorResolver errorResolver		= null;
 	private ObjectMapper mapper;
 	private Object handler;
 	private Class<?> remoteInterface;
@@ -51,19 +56,35 @@ public class JsonRpcServer {
 	 * Creates the server with the given {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler} {@link Object} but only
 	 * methods available on the {@code remoteInterface}.
+	 * 
+	 * @param mapper the {@link ObjectMapper}
+	 * @param handler the {@code handler}
+	 * @param remoteInterface the interface
+	 */
+	public JsonRpcServer(ObjectMapper mapper, Object handler, Class<?> remoteInterface, ErrorResolver errorResolver) {
+		this.mapper				= mapper;
+		this.handler 			= handler;
+		this.remoteInterface	= remoteInterface;
+		this.errorResolver		= errorResolver;
+	}
+
+	/**
+	 * Creates the server with the given {@link ObjectMapper} delegating
+	 * all calls to the given {@code handler} {@link Object} but only
+	 * methods available on the {@code remoteInterface}.
+	 * 
 	 * @param mapper the {@link ObjectMapper}
 	 * @param handler the {@code handler}
 	 * @param remoteInterface the interface
 	 */
 	public JsonRpcServer(ObjectMapper mapper, Object handler, Class<?> remoteInterface) {
-		this.mapper				= mapper;
-		this.handler 			= handler;
-		this.remoteInterface	= remoteInterface;
+		this(mapper, handler, remoteInterface, new AnnotationsErrorResolver());
 	}
 
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler}.
+	 * 
 	 * @param mapper the {@link ObjectMapper}
 	 * @param handler the {@code handler}
 	 */
@@ -75,6 +96,7 @@ public class JsonRpcServer {
 	 * Creates the server with a default {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler} {@link Object} but only
 	 * methods available on the {@code remoteInterface}.
+	 * 
 	 * @param handler the {@code handler}
 	 * @param remoteInterface the interface
 	 */
@@ -85,6 +107,7 @@ public class JsonRpcServer {
 	/**
 	 * Creates the server with a default {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler}.
+	 * 
 	 * @param handler the {@code handler}
 	 */
 	public JsonRpcServer(Object handler) {
@@ -93,6 +116,7 @@ public class JsonRpcServer {
 
 	/**
 	 * Handles a portlet request.
+	 * 
 	 * @param request the {@link ResourceRequest}
 	 * @param response the {@link ResourceResponse}
 	 * @throws IOException on error
@@ -130,6 +154,7 @@ public class JsonRpcServer {
 
 	/**
 	 * Handles a servlet request.
+	 * 
 	 * @param request the {@link HttpServletRequest}
 	 * @param response the {@link HttpServletResponse}
 	 * @throws IOException on error
@@ -170,6 +195,7 @@ public class JsonRpcServer {
 	 * that is to say that a single {@link JsonNode} is read from
 	 * the stream and treated as a JSON-RPC request.  All responses
 	 * are written to the given {@link OutputStream}.
+	 * 
 	 * @param ips the {@link InputStream}
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
@@ -181,6 +207,7 @@ public class JsonRpcServer {
 
 	/**
 	 * Returns parameters into an {@link InputStream} of JSON data.
+	 * 
 	 * @param method the method
 	 * @param id the id
 	 * @param params the base64 encoded params
@@ -209,6 +236,7 @@ public class JsonRpcServer {
 
 	/**
 	 * Returns the handler's class or interface.
+	 * 
 	 * @return the class
 	 */
 	private Class<?> getHandlerClass() {
@@ -219,6 +247,7 @@ public class JsonRpcServer {
 	/**
 	 * Handles the given {@link JsonNode} and writes the
 	 * responses to the given {@link OutputStream}.
+	 * 
 	 * @param node the {@link JsonNode}
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
@@ -244,6 +273,7 @@ public class JsonRpcServer {
 	/**
 	 * Handles the given {@link ArrayNode} and writes the
 	 * responses to the given {@link OutputStream}.
+	 * 
 	 * @param node the {@link JsonNode}
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
@@ -260,6 +290,7 @@ public class JsonRpcServer {
 	/**
 	 * Handles the given {@link ObjectNode} and writes the
 	 * responses to the given {@link OutputStream}.
+	 * 
 	 * @param node the {@link JsonNode}
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
@@ -304,54 +335,11 @@ public class JsonRpcServer {
 
 		// invoke the method
 		JsonNode result = null;
-		ObjectNode error = null;
 		Throwable thrown = null;
 		try {
 			result = invoke(methodArgs.method, methodArgs.arguments);
 		} catch (Throwable e) {
 			thrown = e;
-			if (InvocationTargetException.class.isInstance(e)) {
-				e = InvocationTargetException.class.cast(e).getTargetException();
-			}
-
-			// create error object node
-			error = mapper.createObjectNode();
-
-			// use annotations to map errors
-			JsonRpcErrors errors = ReflectionUtil.getAnnotation(methodArgs.method, JsonRpcErrors.class);
-			boolean errorMapped = false;
-			if (errors!=null) {
-				for (JsonRpcError em : errors.value()) {
-					if (em.exception().isInstance(e)) {
-						error.put("code", em.code());
-						error.put("message", em.message());
-
-						// get data from annotation
-						String data = em.data();
-
-						// default to exception message
-						if("".equals(data)) {
-							data = e.getMessage();
-						}
-
-						// only add the data if we have a value
-						if (data != null && !"".equals(data)) {
-							error.put("data", data);
-						}
-
-						// we used an annotation for the exception
-						errorMapped = true;
-						break;
-					}
-				}
-			}
-
-			// generate generic error response
-			if (!errorMapped) {
-				error.put("code", 0);
-				error.put("message", e.getMessage());
-				error.put("data", e.getClass().getName());
-			}
 		}
 
 		// bail if notification request
@@ -359,14 +347,43 @@ public class JsonRpcServer {
 			return;
 		}
 
-		// create response
-		ObjectNode response = mapper.createObjectNode();
-		response.put("jsonrpc", jsonRpc);
-		response.put("id", id);
-		if (error==null) {
+		// attempt to resolve the error
+		JsonError error = null;
+		if (thrown!=null) {
+
+			// get cause of exception
+			Throwable e = thrown;
+			if (InvocationTargetException.class.isInstance(e)) {
+				e = InvocationTargetException.class.cast(e).getTargetException();
+			}
+
+			// resolve error
+			if (errorResolver!=null) {
+				error = errorResolver.resolveError(
+					e, methodArgs.method, methodArgs.arguments);
+			}
+	
+			// make sure we have a JsonError
+			if (error==null) {
+				error = new JsonError(
+					0, e.getMessage(), e.getClass().getName());
+			}
+		}
+
+		// the resoponse object
+		ObjectNode response = null;
+
+		// build error
+		if (error!=null) {
+			response = createErrorResponse(
+				jsonRpc, id, error.getCode(), error.getMessage(), error.getData());
+
+		// build success
+		} else {
+			response = mapper.createObjectNode();
+			response.put("jsonrpc", jsonRpc);
+			response.put("id", id);
 			response.put("result", result);
-		} else if (error!=null) {
-			response.put("error", error);
 		}
 
 		// write it
@@ -385,6 +402,7 @@ public class JsonRpcServer {
 	 * Invokes the given method on the {@code handler} passing
 	 * the given params (after converting them to beans\objects)
 	 * to it.
+	 * 
 	 * @param m the method to invoke
 	 * @param params the params to pass to the method
 	 * @return the return value (or null if no return)
@@ -412,6 +430,7 @@ public class JsonRpcServer {
 
 	/**
 	 * Convenience method for creating an error response.
+	 * 
 	 * @param jsonRpc the jsonrpc string
 	 * @param id the id
 	 * @param code the error code
@@ -438,6 +457,7 @@ public class JsonRpcServer {
 	 * Finds the {@link Method} from the supplied {@link Set} that
 	 * best matches the rest of the arguments supplied and returns
 	 * it as a {@link MethodAndArgs} class.
+	 * 
 	 * @param methods the {@link Method}s
 	 * @param paramsNode the {@link JsonNode} passed as the parameters
 	 * @return the {@link MethodAndArgs}
@@ -471,6 +491,7 @@ public class JsonRpcServer {
 	 * Finds the {@link Method} from the supplied {@link Set} that
 	 * best matches the rest of the arguments supplied and returns
 	 * it as a {@link MethodAndArgs} class.
+	 * 
 	 * @param methods the {@link Method}s
 	 * @param paramCount the number of expect parameters
 	 * @param paramNodes the parameters for matching types
@@ -565,19 +586,21 @@ public class JsonRpcServer {
 	 * Finds the {@link Method} from the supplied {@link Set} that
 	 * best matches the rest of the arguments supplied and returns
 	 * it as a {@link MethodAndArgs} class.
+	 * 
 	 * @param methods the {@link Method}s
 	 * @param paramNames the parameter names
 	 * @param paramNodes the parameters for matching types
 	 * @return the {@link MethodAndArgs}
 	 */
+	@SuppressWarnings("deprecation")
 	private MethodAndArgs findBestMethodUsingParamNames(
 		Set<Method> methods, Set<String> paramNames, ObjectNode paramNodes) {
 
 		// determine param count
-		int maxMatchingParams 					= -1;
-		int maxMatchingParamTypes				= -1;
-		Method bestMethod 						= null;
-		List<JsonRpcParamName> bestAnnotations	= null;
+		int maxMatchingParams 				= -1;
+		int maxMatchingParamTypes			= -1;
+		Method bestMethod 					= null;
+		List<JsonRpcParam> bestAnnotations	= null;
 
 		for (Method method : methods) {
 
@@ -591,19 +614,42 @@ public class JsonRpcServer {
 				continue;
 			}
 
-			// get parameter annotations
-			List<List<JsonRpcParamName>> methodAnnotations = ReflectionUtil
-				.getParameterAnnotations(method, JsonRpcParamName.class);
+			// list of params
+			List<JsonRpcParam> annotations = new ArrayList<JsonRpcParam>();
 
-			// collapse matrix to simple array
-			// and ensure we have names for each param
-			List<JsonRpcParamName> annotations = new ArrayList<JsonRpcParamName>(methodAnnotations.size());
-			for (List<JsonRpcParamName> annots : methodAnnotations) {
-				if (annots.size()>0) {
-					annotations.add(annots.get(0));
-				} else {
-					// all parameters must be named for this to work
-					continue;
+			// try the deprecated parameter first
+			List<List<JsonRpcParamName>> depMethodAnnotations = ReflectionUtil
+				.getParameterAnnotations(method, JsonRpcParamName.class);
+			if (!depMethodAnnotations.isEmpty()) {
+				for (List<JsonRpcParamName> annots : depMethodAnnotations) {
+					if (annots.size()>0) {
+						final JsonRpcParamName annotation = annots.get(0);
+						annotations.add((JsonRpcParam)Proxy.newProxyInstance(
+							getClass().getClassLoader(), new Class[] { JsonRpcParam.class }, new InvocationHandler() {
+								public Object invoke(Object proxy, Method method, Object[] args)
+									throws Throwable {
+									if (method.getName().equals("value")) {
+										return annotation.value();
+									}
+									throw new Exception("Unknown method: "+method.getName());
+								}
+							}));
+					} else {
+						annots.add(null);
+					}
+				}
+			}
+
+			// now try the non-deprecated parameters
+			List<List<JsonRpcParam>> methodAnnotations = ReflectionUtil
+				.getParameterAnnotations(method, JsonRpcParam.class);
+			if (!methodAnnotations.isEmpty()) {
+				for (List<JsonRpcParam> annots : methodAnnotations) {
+					if (annots.size()>0) {
+						annotations.add(annots.get(0));
+					} else {
+						annots.add(null);
+					}
 				}
 			}
 
@@ -611,7 +657,14 @@ public class JsonRpcServer {
 			int numMatchingParamTypes = 0;
 			int numMatchingParams = 0;
 			for (int i=0; i<annotations.size(); i++) {
-				JsonRpcParamName annotation	= annotations.get(i);
+
+				// skip parameters that didn't have an annotation
+				JsonRpcParam annotation	= annotations.get(i);
+				if (annotation==null) {
+					continue;
+				}
+
+				// check for a match
 				String paramName			= annotation.value();
 				boolean hasParamName 		= paramNames.contains(paramName);
 
@@ -655,9 +708,9 @@ public class JsonRpcServer {
 		// now fill arguments
 		int numParameters = bestMethod.getParameterTypes().length;
 		for (int i=0; i<numParameters; i++) {
-			String paramName = bestAnnotations.get(i).value();
-			if (paramNames.contains(paramName)) {
-				ret.arguments.add(paramNodes.get(paramName));
+			JsonRpcParam param = bestAnnotations.get(i);
+			if (param!=null && paramNames.contains(param.value())) {
+				ret.arguments.add(paramNodes.get(param.value()));
 			} else {
 				ret.arguments.add(NullNode.getInstance());
 			}
@@ -672,6 +725,7 @@ public class JsonRpcServer {
 	 * the given type.  This method is limitted to a few java types
 	 * only and shouldn't be used to determine with great accuracy
 	 * whether or not the types match.
+	 * 
 	 * @param node the {@link JsonNode}
 	 * @param type the {@link Class}
 	 * @return true if the types match, false otherwise
@@ -725,6 +779,11 @@ public class JsonRpcServer {
 	}
 
 	/**
+	 * Sets whether or not the server should be backwards
+	 * compatible to JSON-RPC 1.0.  This only includes the
+	 * omission of the jsonrpc property on the request object,
+	 * not the class hinting.
+	 * 
 	 * @param backwardsComaptible the backwardsComaptible to set
 	 */
 	public void setBackwardsComaptible(boolean backwardsComaptible) {
@@ -733,6 +792,7 @@ public class JsonRpcServer {
 
 	/**
 	 * Sets whether or not the server should re-throw exceptions.
+	 * 
 	 * @param rethrowExceptions true or false
 	 */
 	public void setRethrowExceptions(boolean rethrowExceptions) {
@@ -742,6 +802,7 @@ public class JsonRpcServer {
 	/**
 	 * Sets whether or not the server should allow superfluous
 	 * parameters to method calls.
+	 * 
 	 * @param allowExtraParams true or false
 	 */
 	public void setAllowExtraParams(boolean allowExtraParams) {
@@ -749,10 +810,25 @@ public class JsonRpcServer {
 	}
 
 	/**
+	 * Sets whether or not the server should allow less parameters
+	 * than required to method calls (passing null for missing params).
+	 * 
 	 * @param allowLessParams the allowLessParams to set
 	 */
 	public void setAllowLessParams(boolean allowLessParams) {
 		this.allowLessParams = allowLessParams;
+	}
+
+	/**
+	 * Sets the {@link ErrorResolver} used for resolving errors.
+	 * Multiple {@link ErrorResolver}s can be used at once by
+	 * using the {@link MultipleErrorResolver}.
+	 * 
+	 * @param errorResolver the errorResolver to set
+	 * @see MultipleErrorResolver
+	 */
+	public void setErrorResolver(ErrorResolver errorResolver) {
+		this.errorResolver = errorResolver;
 	}
 
 }

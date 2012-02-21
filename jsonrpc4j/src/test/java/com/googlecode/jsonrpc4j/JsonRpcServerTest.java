@@ -363,7 +363,7 @@ public class JsonRpcServerTest {
 	}
 	
 	private interface ServiceInterfaceWithParamNameAnnotaion {        
-		public String testMethod(@JsonRpcParamName("param1") String param1);    
+		public String testMethod(@JsonRpcParam("param1") String param1);    
 		public String overloadedMethod();
 		public String overloadedMethod(@JsonRpcParamName("param1") String stringParam1);
 		public String overloadedMethod(@JsonRpcParamName("param1") String stringParam1, @JsonRpcParamName("param2") String stringParam2);
