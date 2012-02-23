@@ -169,7 +169,7 @@ public class JsonRpcClient {
 
 		// show to listener
 		if (this.requestListener!=null) {
-			this.requestListener.onBeforeResponseProcessed(jsonObject);
+			this.requestListener.onBeforeResponseProcessed(this, jsonObject);
 		}
 
 		// detect errors
@@ -216,7 +216,7 @@ public class JsonRpcClient {
 
 		// show to listener
 		if (this.requestListener!=null) {
-			this.requestListener.onBeforeRequestSent(request);
+			this.requestListener.onBeforeRequestSent(this, request);
 		}
 
 		// post the json data;
@@ -244,7 +244,7 @@ public class JsonRpcClient {
 
 		// show to listener
 		if (this.requestListener!=null) {
-			this.requestListener.onBeforeRequestSent(request);
+			this.requestListener.onBeforeRequestSent(this, request);
 		}
 
 		// post the json data;
