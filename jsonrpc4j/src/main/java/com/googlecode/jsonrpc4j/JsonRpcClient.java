@@ -18,9 +18,9 @@ public class JsonRpcClient {
 
 	private static final String JSON_RPC_VERSION = "2.0";
 
-
 	private ObjectMapper mapper;
 	private Random random;
+	private RequestListener requestListener;
 
 	/**
 	 * Creates a client that uses the given {@link ObjectMapper} to
@@ -38,6 +38,14 @@ public class JsonRpcClient {
 	 */
 	public JsonRpcClient() {
 		this(new ObjectMapper());
+	}
+
+	/**
+	 * Sets the {@link RequestListener}.
+	 * @param requestListener the {@link RequestListener}
+	 */
+	public void setRequestListener(RequestListener requestListener) {
+		this.requestListener = requestListener;
 	}
 
 	/**
@@ -159,6 +167,11 @@ public class JsonRpcClient {
 		}
 		ObjectNode jsonObject = ObjectNode.class.cast(response);
 
+		// show to listener
+		if (this.requestListener!=null) {
+			this.requestListener.onBeforeResponseProcessed(jsonObject);
+		}
+
 		// detect errors
 		if (jsonObject.has("error")
 			&& jsonObject.get("error")!=null
@@ -201,6 +214,11 @@ public class JsonRpcClient {
 		request.put("method", methodName);
 		request.put("params", mapper.valueToTree(arguments));
 
+		// show to listener
+		if (this.requestListener!=null) {
+			this.requestListener.onBeforeRequestSent(request);
+		}
+
 		// post the json data;
 		mapper.writeValue(ops, request);
 	}
@@ -224,9 +242,48 @@ public class JsonRpcClient {
 		request.put("method", methodName);
 		request.put("params", mapper.valueToTree(arguments));
 
+		// show to listener
+		if (this.requestListener!=null) {
+			this.requestListener.onBeforeRequestSent(request);
+		}
+
 		// post the json data;
 		mapper.writeValue(ops, request);
 	}
 
+	/**
+	 * Returns the {@link ObjectMapper} that the client
+	 * is using for JSON marshalling.
+	 * @return the {@link ObjectMapper}
+	 */
+	public ObjectMapper getObjectMapper() {
+		return mapper;
+	}
+
+	/**
+	 * Provides access to the jackson {@link ObjectNode}s
+	 * that represent the JSON-RPC requests and responses.
+	 *
+	 */
+	public interface RequestListener {
+
+		/**
+		 * Called before a request is sent to the
+		 * server end-point.  Modifications can be
+		 * made to the request before it's sent.
+		 * @param client the {@link JsonRpcClient}
+		 * @param request the request {@link ObjectNode}
+		 */
+		void onBeforeRequestSent(JsonRpcClient client, ObjectNode request);
+
+		/**
+		 * Called after a response has been returned and
+		 * successfully parsed but before it has been
+		 * processed and turned into java objects.
+		 * @param client the {@link JsonRpcClient}
+		 * @param response the response {@link ObjectNode}
+		 */
+		void onBeforeResponseProcessed(JsonRpcClient client, ObjectNode response);
+	}
 
 }

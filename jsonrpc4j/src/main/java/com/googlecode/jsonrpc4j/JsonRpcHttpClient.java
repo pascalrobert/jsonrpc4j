@@ -4,6 +4,7 @@ import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -145,10 +146,38 @@ public class JsonRpcHttpClient
 	}
 
 	/**
+	 * @return the serviceUrl
+	 */
+	public URL getServiceUrl() {
+		return serviceUrl;
+	}
+
+	/**
+	 * @param serviceUrl the serviceUrl to set
+	 */
+	public void setServiceUrl(URL serviceUrl) {
+		this.serviceUrl = serviceUrl;
+	}
+
+	/**
+	 * @return the connectionProxy
+	 */
+	public Proxy getConnectionProxy() {
+		return connectionProxy;
+	}
+
+	/**
 	 * @param connectionProxy the connectionProxy to set
 	 */
 	public void setConnectionProxy(Proxy connectionProxy) {
 		this.connectionProxy = connectionProxy;
+	}
+
+	/**
+	 * @return the connectionTimeoutMillis
+	 */
+	public int getConnectionTimeoutMillis() {
+		return connectionTimeoutMillis;
 	}
 
 	/**
@@ -159,10 +188,32 @@ public class JsonRpcHttpClient
 	}
 
 	/**
+	 * @return the readTimeoutMillis
+	 */
+	public int getReadTimeoutMillis() {
+		return readTimeoutMillis;
+	}
+
+	/**
 	 * @param readTimeoutMillis the readTimeoutMillis to set
 	 */
 	public void setReadTimeoutMillis(int readTimeoutMillis) {
 		this.readTimeoutMillis = readTimeoutMillis;
+	}
+
+	/**
+	 * @return the headers
+	 */
+	public Map<String, String> getHeaders() {
+		return Collections.unmodifiableMap(headers);
+	}
+
+	/**
+	 * @param headers the headers to set
+	 */
+	public void setHeaders(Map<String, String> headers) {
+		this.headers.clear();
+		this.headers.putAll(headers);
 	}
 
 }

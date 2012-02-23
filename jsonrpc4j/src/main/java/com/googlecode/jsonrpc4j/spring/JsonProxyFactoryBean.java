@@ -18,6 +18,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.remoting.support.UrlBasedRemoteAccessor;
 
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
+import com.googlecode.jsonrpc4j.JsonRpcClient.RequestListener;
 
 /**
  * {@link FactoryBean} for creating a {@link UrlBasedRemoteAccessor}
@@ -32,6 +33,7 @@ public class JsonProxyFactoryBean
 	ApplicationContextAware {
 
 	private Object				proxyObject			= null;
+	private RequestListener		requestListener		= null;
 	private ObjectMapper		objectMapper		= null;
 	private JsonRpcHttpClient	jsonRpcHttpClient	= null;
 	private Map<String, String>	extraHttpHeaders	= new HashMap<String, String>();
@@ -65,6 +67,7 @@ public class JsonProxyFactoryBean
 		// create JsonRpcHttpClient
 		try {
 			jsonRpcHttpClient = new JsonRpcHttpClient(objectMapper, new URL(getServiceUrl()), extraHttpHeaders);
+			jsonRpcHttpClient.setRequestListener(requestListener);
 		} catch (MalformedURLException mue) {
 			throw new RuntimeException(mue);
 		}
@@ -129,6 +132,13 @@ public class JsonProxyFactoryBean
 	 */
 	public void setExtraHttpHeaders(Map<String, String> extraHttpHeaders) {
 		this.extraHttpHeaders = extraHttpHeaders;
+	}
+
+	/**
+	 * @param requestListener the requestListener to set
+	 */
+	public void setRequestListener(RequestListener requestListener) {
+		this.requestListener = requestListener;
 	}
 
 }
