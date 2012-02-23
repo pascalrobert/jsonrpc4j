@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -15,6 +17,8 @@ import org.codehaus.jackson.node.ObjectNode;
  * A JSON-RPC client.
  */
 public class JsonRpcClient {
+
+	private static final Logger LOGGER = Logger.getLogger(JsonRpcClient.class.getName());
 
 	private static final String JSON_RPC_VERSION = "2.0";
 
@@ -60,12 +64,13 @@ public class JsonRpcClient {
 	 * @param ops the {@link OutputStream} to write to
 	 * @param ips the {@link InputStream} to read from
 	 * @return the returned Object
-	 * @throws Exception on error
+	 * @throws IOException on error
+	 * @throws JsonRpcClientException on error
 	 */
 	public Object invokeAndReadResponse(
 		String methodName, Object[] arguments, Type returnType,
 		OutputStream ops, InputStream ips)
-		throws Exception {
+		throws JsonRpcClientException, IOException {
 		return invokeAndReadResponse(
 			methodName, arguments, returnType, ops, ips, random.nextLong()+"");
 	}
@@ -83,12 +88,15 @@ public class JsonRpcClient {
 	 * @param ips the {@link InputStream} to read from
 	 * @param id id to send with the JSON-RPC request
 	 * @return the returned Object
-	 * @throws Exception on error
+	 * @throws IOException on error
+	 * @throws JsonRpcClientException if there is an error
+	 * 	while reading the response
 	 */
 	public Object invokeAndReadResponse(
 		String methodName, Object[] arguments, Type returnType,
 		OutputStream ops, InputStream ips, String id)
-		throws Exception {
+		throws JsonRpcClientException,
+		IOException {
 
 		// invoke it
 		invoke(methodName, arguments, ops, id);
@@ -105,11 +113,11 @@ public class JsonRpcClient {
 	 * @param methodName the method to invoke
 	 * @param arguments the arguments to pass to the method
 	 * @param ops the {@link OutputStream} to write to
-	 * @throws Exception on error
+	 * @throws IOException on error
 	 */
 	public void invoke(
 		String methodName, Object[] arguments, OutputStream ops)
-		throws Exception {
+		throws IOException {
 		invoke(methodName, arguments, ops, random.nextLong()+"");
 	}
 
@@ -121,11 +129,11 @@ public class JsonRpcClient {
 	 * @param arguments the arguments to pass to the method
 	 * @param ops the {@link OutputStream} to write to
 	 * @param id the request id
-	 * @throws Exception on error
+	 * @throws IOException on error
 	 */
 	public void invoke(
 		String methodName, Object[] arguments, OutputStream ops, String id)
-		throws Exception {
+		throws IOException {
 		writeRequest(methodName, arguments, ops, id);
 		ops.flush();
 	}
@@ -137,11 +145,11 @@ public class JsonRpcClient {
 	 * @param methodName the method to invoke
 	 * @param arguments the arguments to pass to the method
 	 * @param ops the {@link OutputStream} to write to
-	 * @throws Exception on error
+	 * @throws IOException on error
 	 */
 	public void invokeNotification(
 		String methodName, Object[] arguments, OutputStream ops)
-		throws Exception {
+		throws IOException {
 		writeNotification(methodName, arguments, ops);
 		ops.flush();
 	}
@@ -153,17 +161,22 @@ public class JsonRpcClient {
 	 * @param returnType the expected return type
 	 * @param ips the {@link InputStream} to read from
 	 * @return the object returned by the JSON-RPC response
-	 * @throws Exception on error
+	 * @throws JsonRpcClientException on error
+	 * @throws IOException on error
 	 */
 	public Object readResponse(Type returnType, InputStream ips)
-		throws Exception {
+		throws JsonRpcClientException,
+		IOException {
 
 		// read the response
 		JsonNode response = mapper.readTree(ips);
+		if (LOGGER.isLoggable(Level.FINE)) {
+			LOGGER.log(Level.FINE, "JSON-PRC Response: "+response.toString());
+		}
 
 		// bail on invalid response
 		if (!response.isObject()) {
-			throw new Exception("Invalid JSON-RPC response");
+			throw new JsonRpcClientException(0, "Invalid JSON-RPC response", response);
 		}
 		ObjectNode jsonObject = ObjectNode.class.cast(response);
 
@@ -177,8 +190,10 @@ public class JsonRpcClient {
 			&& jsonObject.get("error")!=null
 			&& !jsonObject.get("error").isNull()) {
 			ObjectNode errorObject = ObjectNode.class.cast(jsonObject.get("error"));
-			throw new Exception(
-				"JSON-RPC Error "+errorObject.get("code")+": "+errorObject.get("message"));
+			throw new JsonRpcClientException(
+				errorObject.get("code").getValueAsInt(),
+				errorObject.get("message").getValueAsText(),
+				errorObject.get("data"));
 		}
 
 		// convert it to a return object
@@ -218,6 +233,9 @@ public class JsonRpcClient {
 		if (this.requestListener!=null) {
 			this.requestListener.onBeforeRequestSent(this, request);
 		}
+		if (LOGGER.isLoggable(Level.FINE)) {
+			LOGGER.log(Level.FINE, "JSON-PRC Request: "+request.toString());
+		}
 
 		// post the json data;
 		mapper.writeValue(ops, request);
@@ -245,6 +263,9 @@ public class JsonRpcClient {
 		// show to listener
 		if (this.requestListener!=null) {
 			this.requestListener.onBeforeRequestSent(this, request);
+		}
+		if (LOGGER.isLoggable(Level.FINE)) {
+			LOGGER.log(Level.FINE, "JSON-PRC Notification: "+request.toString());
 		}
 
 		// post the json data;
