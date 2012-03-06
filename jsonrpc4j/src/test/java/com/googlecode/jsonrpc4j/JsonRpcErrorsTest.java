@@ -60,8 +60,11 @@ public class JsonRpcErrorsTest {
 
 		assertNotNull(error);
 		assertEquals(1234, error.get("code").getIntValue());
-		assertEquals("", error.get("message").getTextValue());
-		assertNull(error.get("data"));
+		assertEquals(null, error.get("message").getTextValue());
+		assertNotNull(error.get("data"));
+		JsonNode data = error.get("data");
+		assertEquals(null, data.get("message").getTextValue());
+		assertEquals(TestException.class.getName(), data.get("exceptionTypeName").getTextValue());
 	}
 
 	@Test
@@ -76,7 +79,10 @@ public class JsonRpcErrorsTest {
 		assertNotNull(error);
 		assertEquals(-5678, error.get("code").getIntValue());
 		assertEquals("The message", error.get("message").getTextValue());
-		assertEquals("The data", error.get("data").getTextValue());
+		assertNotNull(error.get("data"));
+		JsonNode data = error.get("data");
+		assertEquals("The message", data.get("message").getTextValue());
+		assertEquals(TestException.class.getName(), data.get("exceptionTypeName").getTextValue());
 	}
 	
 	@Test
@@ -90,8 +96,11 @@ public class JsonRpcErrorsTest {
 
 		assertNotNull(error);
 		assertEquals(1234, error.get("code").getIntValue());
-		assertEquals("", error.get("message").getTextValue());
-		assertEquals(testExceptionWithMessage.getMessage(), error.get("data").getTextValue());
+		assertEquals(testExceptionWithMessage.getMessage(), error.get("message").getTextValue());
+		assertNotNull(error.get("data"));
+		JsonNode data = error.get("data");
+		assertEquals(testExceptionWithMessage.getMessage(), data.get("message").getTextValue());
+		assertEquals(TestException.class.getName(), data.get("exceptionTypeName").getTextValue());
 	}
 
 	private interface ServiceInterfaceWithoutAnnotation {

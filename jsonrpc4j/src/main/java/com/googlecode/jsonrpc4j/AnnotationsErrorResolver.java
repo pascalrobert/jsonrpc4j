@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.codehaus.jackson.JsonNode;
 
+import com.googlecode.jsonrpc4j.DefaultErrorResolver.ErrorData;
+
 /**
  * {@link ErrorResolver} that uses annotations.
  */
@@ -23,9 +25,11 @@ public class AnnotationsErrorResolver
 		if (errors!=null) {
 			for (JsonRpcError em : errors.value()) {
 				if (em.exception().isInstance(t)) {
-					String data = (em.data()!=null && em.data().trim().length()>0)
-						? em.data() : t.getMessage();
-					return new JsonError(em.code(), em.message(), data);
+					String message = em.message()!=null && em.message().trim().length() > 0
+						? em.message()
+						: t.getMessage();
+					return new JsonError(em.code(), message,
+						new ErrorData(em.exception().getName(), message));
 				}
 			}
 		}
