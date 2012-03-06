@@ -15,7 +15,7 @@ public interface ErrorResolver {
 	 * was thrown by the given {@link Method} when passed
 	 * the given {@code arguments}.  If the error can not
 	 * be resolved then null is returned.
-	 * 
+	 *
 	 * @param t the {@link Throwable}
 	 * @param method the {@link Method} that threw the {@link Throwable}
 	 * @param arguments the {@code arguments} that were passed to the {@link Method}
@@ -32,6 +32,12 @@ public interface ErrorResolver {
 		private String message;
 		private Object data;
 
+		/**
+		 * Creates the error.
+		 * @param code the code
+		 * @param message the message
+		 * @param data the data
+		 */
 		public JsonError(int code, String message, Object data) {
 			this.code 		= code;
 			this.message	= message;

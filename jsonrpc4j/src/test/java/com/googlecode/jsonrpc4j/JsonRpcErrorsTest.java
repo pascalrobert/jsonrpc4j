@@ -41,14 +41,12 @@ public class JsonRpcErrorsTest {
 		JsonRpcServer jsonRpcServer = new JsonRpcServer(mapper, new Service(), ServiceInterfaceWithoutAnnotation.class);
 		jsonRpcServer.handle(new ClassPathResource(JSON_FILE).getInputStream(), baos);
 
-		String response = baos.toString(JSON_ENCODING);        
+		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 		JsonNode error = json.get("error");
 
-		assertNotNull(error);        
+		assertNotNull(error);
 		assertEquals(0, error.get("code").getIntValue());
-		assertEquals(testException.getMessage(), error.get("message").getTextValue());
-		assertEquals(TestException.class.getName(), error.get("data").getTextValue());        
 	}
 
 	@Test
@@ -56,14 +54,14 @@ public class JsonRpcErrorsTest {
 		JsonRpcServer jsonRpcServer = new JsonRpcServer(mapper, new Service(), ServiceInterfaceWithAnnotation.class);
 		jsonRpcServer.handle(new ClassPathResource(JSON_FILE).getInputStream(), baos);
 
-		String response = baos.toString(JSON_ENCODING);        
+		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 		JsonNode error = json.get("error");
 
-		assertNotNull(error);        
+		assertNotNull(error);
 		assertEquals(1234, error.get("code").getIntValue());
 		assertEquals("", error.get("message").getTextValue());
-		assertNull(error.get("data"));        
+		assertNull(error.get("data"));
 	}
 
 	@Test
@@ -75,7 +73,7 @@ public class JsonRpcErrorsTest {
 		JsonNode json = mapper.readTree(response);
 		JsonNode error = json.get("error");
 
-		assertNotNull(error);        
+		assertNotNull(error);
 		assertEquals(-5678, error.get("code").getIntValue());
 		assertEquals("The message", error.get("message").getTextValue());
 		assertEquals("The data", error.get("data").getTextValue());
@@ -90,14 +88,14 @@ public class JsonRpcErrorsTest {
 		JsonNode json = mapper.readTree(response);
 		JsonNode error = json.get("error");
 
-		assertNotNull(error);        
+		assertNotNull(error);
 		assertEquals(1234, error.get("code").getIntValue());
 		assertEquals("", error.get("message").getTextValue());
 		assertEquals(testExceptionWithMessage.getMessage(), error.get("data").getTextValue());
 	}
 
-	private interface ServiceInterfaceWithoutAnnotation {        
-		public Object testMethod();        
+	private interface ServiceInterfaceWithoutAnnotation {
+		public Object testMethod();
 	}
 
 	private interface ServiceInterfaceWithAnnotation {
@@ -114,18 +112,18 @@ public class JsonRpcErrorsTest {
 	private class Service implements ServiceInterfaceWithoutAnnotation,
 	ServiceInterfaceWithAnnotation, ServiceInterfaceWithAnnotationMessageAndData {
 		public Object testMethod() {
-			throw testException;            
+			throw testException;    
 		}
 	}
 	
 	private class ServiceWithExceptionMsg implements ServiceInterfaceWithoutAnnotation,
 	ServiceInterfaceWithAnnotation, ServiceInterfaceWithAnnotationMessageAndData {
 		public Object testMethod() {
-			throw testExceptionWithMessage;            
+			throw testExceptionWithMessage;    
 		}
 	}
 
-	private class TestException extends RuntimeException {
+	public class TestException extends RuntimeException {
 				
 		private static final long serialVersionUID = 1L;
 		

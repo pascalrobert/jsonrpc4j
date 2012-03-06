@@ -43,33 +43,18 @@ public class JsonRpcServer {
 
 	public static final String JSONRPC_RESPONSE_CONTENT_TYPE = "application/json-rpc";
 
+	public static final ErrorResolver DEFAULT_ERRROR_RESOLVER
+		= new MultipleErrorResolver(AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE);
+
 	private boolean backwardsComaptible		= true;
 	private boolean rethrowExceptions 		= false;
 	private boolean allowExtraParams 		= false;
 	private boolean allowLessParams			= false;
-	private ErrorResolver errorResolver		= null;
+	private ErrorResolver errorResolver	= null;
 	private ObjectMapper mapper;
 	private Object handler;
 	private Class<?> remoteInterface;
 
-	/**
-	 * Creates the server with the given {@link ObjectMapper} delegating
-	 * all calls to the given {@code handler} {@link Object} but only
-	 * methods available on the {@code remoteInterface}.
-	 *
-	 * @param mapper the {@link ObjectMapper}
-	 * @param handler the {@code handler}
-	 * @param remoteInterface the interface
-	 * @param errorResolver the {@link ErrorResolver}
-	 */
-	public JsonRpcServer(
-		ObjectMapper mapper, Object handler,
-		Class<?> remoteInterface, ErrorResolver errorResolver) {
-		this.mapper				= mapper;
-		this.handler 			= handler;
-		this.remoteInterface	= remoteInterface;
-		this.errorResolver		= errorResolver;
-	}
 
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
@@ -80,8 +65,11 @@ public class JsonRpcServer {
 	 * @param handler the {@code handler}
 	 * @param remoteInterface the interface
 	 */
-	public JsonRpcServer(ObjectMapper mapper, Object handler, Class<?> remoteInterface) {
-		this(mapper, handler, remoteInterface, new AnnotationsErrorResolver());
+	public JsonRpcServer(
+		ObjectMapper mapper, Object handler, Class<?> remoteInterface) {
+		this.mapper				= mapper;
+		this.handler 			= handler;
+		this.remoteInterface	= remoteInterface;
 	}
 
 	/**
@@ -104,7 +92,7 @@ public class JsonRpcServer {
 	 * @param remoteInterface the interface
 	 */
 	public JsonRpcServer(Object handler, Class<?> remoteInterface) {
-		this(new ObjectMapper(), handler, remoteInterface);
+		this(new ObjectMapper(), handler, null);
 	}
 
 	/**
@@ -155,7 +143,7 @@ public class JsonRpcServer {
 		}
 
 		// service the request
-		handleNode(mapper.readValue(input, JsonNode.class), output);
+		handle(input, output);
 	}
 
 	/**
@@ -196,7 +184,7 @@ public class JsonRpcServer {
 		}
 
 		// service the request
-		handleNode(mapper.readValue(input, JsonNode.class), output);
+		handle(input, output);
 	}
 
 	/**
@@ -211,7 +199,7 @@ public class JsonRpcServer {
 	 */
 	public void handle(InputStream ips, OutputStream ops)
 		throws IOException {
-		handleNode(mapper.readValue(ips, JsonNode.class), ops);
+		handleNode(JacksonUtil.readTree(mapper, new NoCloseInputStream(ips)), ops);
 	}
 
 	/**
@@ -315,7 +303,7 @@ public class JsonRpcServer {
 
 		// validate request
 		if (!backwardsComaptible && !node.has("jsonrpc") || !node.has("method")) {
-			mapper.writeValue(ops, createErrorResponse(
+			JacksonUtil.writeValue(mapper, ops, createErrorResponse(
 				"jsonrpc", "null", -32600, "Invalid Request", null));
 			return;
 		}
@@ -335,7 +323,7 @@ public class JsonRpcServer {
 		Set<Method> methods = new HashSet<Method>();
 		methods.addAll(ReflectionUtil.findMethods(getHandlerClass(), methodName));
 		if (methods.isEmpty()) {
-			mapper.writeValue(ops, createErrorResponse(
+			JacksonUtil.writeValue(mapper, ops, createErrorResponse(
 				jsonRpc, id, -32601, "Method not found", null));
 			return;
 		}
@@ -343,7 +331,7 @@ public class JsonRpcServer {
 		// choose a method
 		MethodAndArgs methodArgs = findBestMethodByParamsNode(methods, paramsNode);
 		if (methodArgs==null) {
-			mapper.writeValue(ops, createErrorResponse(
+			JacksonUtil.writeValue(mapper, ops, createErrorResponse(
 				jsonRpc, id, -32602, "Invalid method parameters", null));
 			return;
 		}
@@ -374,6 +362,9 @@ public class JsonRpcServer {
 				if (errorResolver!=null) {
 					error = errorResolver.resolveError(
 						e, methodArgs.method, methodArgs.arguments);
+				} else {
+					error = DEFAULT_ERRROR_RESOLVER.resolveError(
+						e, methodArgs.method, methodArgs.arguments);
 				}
 
 				// make sure we have a JsonError
@@ -400,7 +391,7 @@ public class JsonRpcServer {
 			}
 
 			// write it
-			mapper.writeValue(ops, response);
+			JacksonUtil.writeValue(mapper, ops, response);
 		}
 
 		// log and potentially re-throw errors
@@ -521,6 +512,10 @@ public class JsonRpcServer {
 	private MethodAndArgs findBestMethodUsingParamIndexes(
 		Set<Method> methods, int paramCount, ArrayNode paramNodes) {
 
+		// get param count
+		int numParams = paramNodes!=null && !paramNodes.isNull()
+			? paramNodes.size() : 0;
+
 		// determine param count
 		int bestParamNumDiff		= Integer.MAX_VALUE;
 		Set<Method> matchedMethods	= new HashSet<Method>();
@@ -561,7 +556,7 @@ public class JsonRpcServer {
 		// now narrow it down to the best method
 		// based on argument types
 		Method bestMethod = null;
-		if (matchedMethods.size()==1 || paramNodes.size()==0) {
+		if (matchedMethods.size()==1 || numParams==0) {
 			bestMethod = matchedMethods.iterator().next();
 
 		} else {
@@ -572,7 +567,7 @@ public class JsonRpcServer {
 			for (Method method : matchedMethods) {
 				List<Class<?>> parameterTypes = ReflectionUtil.getParameterTypes(method);
 				int numMatches = 0;
-				for (int i=0; i<parameterTypes.size() && i<paramNodes.size(); i++) {
+				for (int i=0; i<parameterTypes.size() && i<numParams; i++) {
 					if (isMatchingType(paramNodes.get(i), parameterTypes.get(i))) {
 						numMatches++;
 					}
@@ -590,7 +585,6 @@ public class JsonRpcServer {
 
 		// now fill arguments
 		int numParameters = bestMethod.getParameterTypes().length;
-		int numParams = paramNodes.size();
 		for (int i=0; i<numParameters; i++) {
 			if (i<numParams) {
 				ret.arguments.add(paramNodes.get(i));

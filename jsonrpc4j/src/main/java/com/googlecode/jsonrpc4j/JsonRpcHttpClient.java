@@ -1,6 +1,5 @@
 package com.googlecode.jsonrpc4j;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
@@ -65,12 +64,10 @@ public class JsonRpcHttpClient
 	 * Invokes the given method with the given arguments.
 	 * @param methodName the name of the method to invoke
 	 * @param arguments the arguments to the method
-	 * @throws IOException on error
-	 * @throws JsonRpcClientException on error
+	 * @throws Throwable on error
 	 */
 	public void invoke(String methodName, Object[] arguments)
-		throws IOException,
-		JsonRpcClientException {
+		throws Throwable {
 		invoke(methodName, arguments, null, new HashMap<String, String>());
 	}
 
@@ -79,13 +76,11 @@ public class JsonRpcHttpClient
 	 * @param methodName the name of the method to invoke
 	 * @param arguments the arguments to the method
 	 * @param extraHeaders extra headers to add to the request
-	 * @throws IOException on error
-	 * @throws JsonRpcClientException on error
+	 * @throws Throwable on error
 	 */
 	public void invoke(
 		String methodName, Object[] arguments, Map<String, String> extraHeaders)
-		throws IOException,
-		JsonRpcClientException {
+		throws Throwable {
 		invoke(methodName, arguments, null, new HashMap<String, String>());
 	}
 
@@ -96,13 +91,11 @@ public class JsonRpcHttpClient
 	 * @param arguments the arguments to the method
 	 * @param returnType the return type
 	 * @return the return value
-	 * @throws IOException on error
-	 * @throws JsonRpcClientException on error
+	 * @throws Throwable on error
 	 */
 	public Object invoke(
 		String methodName, Object[] arguments, Type returnType)
-		throws IOException,
-		JsonRpcClientException {
+		throws Throwable {
 		return invoke(methodName, arguments, returnType, new HashMap<String, String>());
 	}
 
@@ -114,14 +107,12 @@ public class JsonRpcHttpClient
 	 * @param returnType the return type
 	 * @param extraHeaders extra headers to add to the request
 	 * @return the return value
-	 * @throws IOException on error
-	 * @throws JsonRpcClientException on error
+	 * @throws Throwable on error
 	 */
 	public Object invoke(
 		String methodName, Object[] arguments, Type returnType,
 		Map<String, String> extraHeaders)
-		throws IOException,
-		JsonRpcClientException {
+		throws Throwable {
 
 		// create URLConnection
 		HttpURLConnection con = (HttpURLConnection)serviceUrl.openConnection(connectionProxy);

@@ -11,6 +11,8 @@ import org.codehaus.jackson.JsonNode;
 public class AnnotationsErrorResolver
 	implements ErrorResolver {
 
+	public static final AnnotationsErrorResolver INSTANCE = new AnnotationsErrorResolver();
+
 	/**
 	 * {@inheritDoc}
 	 */

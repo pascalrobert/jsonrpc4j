@@ -25,6 +25,7 @@ public class JsonRpcClient {
 	private ObjectMapper mapper;
 	private Random random;
 	private RequestListener requestListener;
+	private ExceptionResolver exceptionResolver = DefaultExceptionResolver.INSTANCE;
 
 	/**
 	 * Creates a client that uses the given {@link ObjectMapper} to
@@ -64,13 +65,12 @@ public class JsonRpcClient {
 	 * @param ops the {@link OutputStream} to write to
 	 * @param ips the {@link InputStream} to read from
 	 * @return the returned Object
-	 * @throws IOException on error
-	 * @throws JsonRpcClientException on error
+	 * @throws Throwable on error
 	 */
 	public Object invokeAndReadResponse(
 		String methodName, Object[] arguments, Type returnType,
 		OutputStream ops, InputStream ips)
-		throws JsonRpcClientException, IOException {
+		throws Throwable {
 		return invokeAndReadResponse(
 			methodName, arguments, returnType, ops, ips, random.nextLong()+"");
 	}
@@ -88,15 +88,13 @@ public class JsonRpcClient {
 	 * @param ips the {@link InputStream} to read from
 	 * @param id id to send with the JSON-RPC request
 	 * @return the returned Object
-	 * @throws IOException on error
-	 * @throws JsonRpcClientException if there is an error
+	 * @throws Throwable if there is an error
 	 * 	while reading the response
 	 */
 	public Object invokeAndReadResponse(
 		String methodName, Object[] arguments, Type returnType,
 		OutputStream ops, InputStream ips, String id)
-		throws JsonRpcClientException,
-		IOException {
+		throws Throwable {
 
 		// invoke it
 		invoke(methodName, arguments, ops, id);
@@ -161,15 +159,13 @@ public class JsonRpcClient {
 	 * @param returnType the expected return type
 	 * @param ips the {@link InputStream} to read from
 	 * @return the object returned by the JSON-RPC response
-	 * @throws JsonRpcClientException on error
-	 * @throws IOException on error
+	 * @throws Throwable on error
 	 */
 	public Object readResponse(Type returnType, InputStream ips)
-		throws JsonRpcClientException,
-		IOException {
+		throws Throwable {
 
 		// read the response
-		JsonNode response = mapper.readTree(ips);
+		JsonNode response = JacksonUtil.readTree(mapper, new NoCloseInputStream(ips));
 		if (LOGGER.isLoggable(Level.FINE)) {
 			LOGGER.log(Level.FINE, "JSON-PRC Response: "+response.toString());
 		}
@@ -189,18 +185,20 @@ public class JsonRpcClient {
 		if (jsonObject.has("error")
 			&& jsonObject.get("error")!=null
 			&& !jsonObject.get("error").isNull()) {
-			ObjectNode errorObject = ObjectNode.class.cast(jsonObject.get("error"));
-			throw new JsonRpcClientException(
-				errorObject.get("code").getValueAsInt(),
-				errorObject.get("message").getValueAsText(),
-				errorObject.get("data"));
+
+			// resolve and throw the exception
+			if (exceptionResolver==null) {
+				throw DefaultExceptionResolver.INSTANCE.resolveException(jsonObject);
+			} else {
+				throw exceptionResolver.resolveException(jsonObject);
+			}
 		}
 
 		// convert it to a return object
 		if (jsonObject.has("result")
 			&& !jsonObject.get("result").isNull()
 			&& jsonObject.get("result")!=null) {
-			return mapper.readValue(
+			return mapper.readValue( 
 				jsonObject.get("result"), TypeFactory.type(returnType));
 		}
 
@@ -238,7 +236,7 @@ public class JsonRpcClient {
 		}
 
 		// post the json data;
-		mapper.writeValue(ops, request);
+		JacksonUtil.writeValue(mapper, ops, request);
 	}
 
 	/**
@@ -268,8 +266,8 @@ public class JsonRpcClient {
 			LOGGER.log(Level.FINE, "JSON-PRC Notification: "+request.toString());
 		}
 
-		// post the json data;
-		mapper.writeValue(ops, request);
+		// post the json data
+		JacksonUtil.writeValue(mapper, ops, request);
 	}
 
 	/**
@@ -279,6 +277,13 @@ public class JsonRpcClient {
 	 */
 	public ObjectMapper getObjectMapper() {
 		return mapper;
+	}
+
+	/**
+	 * @param exceptionResolver the exceptionResolver to set
+	 */
+	public void setExceptionResolver(ExceptionResolver exceptionResolver) {
+		this.exceptionResolver = exceptionResolver;
 	}
 
 	/**

@@ -14,7 +14,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.remoting.support.RemoteExporter;
 import org.springframework.web.HttpRequestHandler;
 
-import com.googlecode.jsonrpc4j.AnnotationsErrorResolver;
 import com.googlecode.jsonrpc4j.ErrorResolver;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
 
@@ -62,14 +61,10 @@ public class JsonServiceExporter
 			}
 		}
 
-		// make sure we have an error resolver
-		if (errorResolver==null) {
-			errorResolver = new AnnotationsErrorResolver();
-		}
-
 		// create the server
 		jsonRpcServer = new JsonRpcServer(
-			objectMapper, getService(), getServiceInterface(), errorResolver);
+			objectMapper, getService(), getServiceInterface());
+		jsonRpcServer.setErrorResolver(errorResolver);
 		jsonRpcServer.setBackwardsComaptible(backwardsComaptible);
 		jsonRpcServer.setRethrowExceptions(rethrowExceptions);
 		jsonRpcServer.setAllowExtraParams(allowExtraParams);
