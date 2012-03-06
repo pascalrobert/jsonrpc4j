@@ -199,7 +199,7 @@ public class JsonRpcServer {
 	 */
 	public void handle(InputStream ips, OutputStream ops)
 		throws IOException {
-		handleNode(JacksonUtil.readTree(mapper, new NoCloseInputStream(ips)), ops);
+		handleNode(mapper.readTree(new NoCloseInputStream(ips)), ops);
 	}
 
 	/**
@@ -303,7 +303,7 @@ public class JsonRpcServer {
 
 		// validate request
 		if (!backwardsComaptible && !node.has("jsonrpc") || !node.has("method")) {
-			JacksonUtil.writeValue(mapper, ops, createErrorResponse(
+			writeAndFlushValue(ops, createErrorResponse(
 				"jsonrpc", "null", -32600, "Invalid Request", null));
 			return;
 		}
@@ -323,7 +323,7 @@ public class JsonRpcServer {
 		Set<Method> methods = new HashSet<Method>();
 		methods.addAll(ReflectionUtil.findMethods(getHandlerClass(), methodName));
 		if (methods.isEmpty()) {
-			JacksonUtil.writeValue(mapper, ops, createErrorResponse(
+			writeAndFlushValue(ops, createErrorResponse(
 				jsonRpc, id, -32601, "Method not found", null));
 			return;
 		}
@@ -331,7 +331,7 @@ public class JsonRpcServer {
 		// choose a method
 		MethodAndArgs methodArgs = findBestMethodByParamsNode(methods, paramsNode);
 		if (methodArgs==null) {
-			JacksonUtil.writeValue(mapper, ops, createErrorResponse(
+			writeAndFlushValue(ops, createErrorResponse(
 				jsonRpc, id, -32602, "Invalid method parameters", null));
 			return;
 		}
@@ -391,7 +391,7 @@ public class JsonRpcServer {
 			}
 
 			// write it
-			JacksonUtil.writeValue(mapper, ops, response);
+			writeAndFlushValue(ops, response);
 		}
 
 		// log and potentially re-throw errors
@@ -784,6 +784,19 @@ public class JsonRpcServer {
 
 		// not sure if it's a matching type
 		return false;
+	}
+
+	/**
+	 * Writes and flushes a value to the given {@link OutputStream}
+	 * and prevents Jackson from closing it.
+	 * @param ops the {@link OutputStream}
+	 * @param value the value to write
+	 * @throws IOException on error
+	 */
+	private void writeAndFlushValue(OutputStream ops, Object value)
+		throws IOException {
+		mapper.writeValue(new NoCloseOutputStream(ops), value);
+		ops.flush();
 	}
 
 	/**

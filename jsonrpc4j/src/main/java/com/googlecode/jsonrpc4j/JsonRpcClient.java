@@ -165,7 +165,7 @@ public class JsonRpcClient {
 		throws Throwable {
 
 		// read the response
-		JsonNode response = JacksonUtil.readTree(mapper, new NoCloseInputStream(ips));
+		JsonNode response = mapper.readTree(new NoCloseInputStream(ips));
 		if (LOGGER.isLoggable(Level.FINE)) {
 			LOGGER.log(Level.FINE, "JSON-PRC Response: "+response.toString());
 		}
@@ -236,7 +236,7 @@ public class JsonRpcClient {
 		}
 
 		// post the json data;
-		JacksonUtil.writeValue(mapper, ops, request);
+		writeAndFlushValue(ops, request);
 	}
 
 	/**
@@ -267,7 +267,20 @@ public class JsonRpcClient {
 		}
 
 		// post the json data
-		JacksonUtil.writeValue(mapper, ops, request);
+		writeAndFlushValue(ops, request);
+	}
+
+	/**
+	 * Writes and flushes a value to the given {@link OutputStream}
+	 * and prevents Jackson from closing it.
+	 * @param ops the {@link OutputStream}
+	 * @param value the value to write
+	 * @throws IOException on error
+	 */
+	private void writeAndFlushValue(OutputStream ops, Object value)
+		throws IOException {
+		mapper.writeValue(new NoCloseOutputStream(ops), value);
+		ops.flush();
 	}
 
 	/**
