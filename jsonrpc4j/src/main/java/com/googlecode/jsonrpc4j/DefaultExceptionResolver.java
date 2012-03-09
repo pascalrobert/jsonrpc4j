@@ -126,10 +126,10 @@ public class DefaultExceptionResolver
 		Constructor<? extends Throwable> messageCtr = null;
 		try {
 			defaultCtr = tClazz.getConstructor();
-		} catch(Throwable t) { t.printStackTrace();/* eat it */ }
+		} catch(Throwable t) { /* eat it */ }
 		try {
 			messageCtr = tClazz.getConstructor(String.class);
-		} catch(Throwable t) { t.printStackTrace();/* eat it */ }
+		} catch(Throwable t) { /* eat it */ }
 
 
 
