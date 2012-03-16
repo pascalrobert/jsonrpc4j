@@ -1,10 +1,12 @@
 package com.googlecode.jsonrpc4j;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,6 +14,19 @@ import java.util.Map;
  * Utilities for create client proxies.
  */
 public abstract class ProxyUtil {
+
+
+	public static <T> T createProxy(
+		ClassLoader classLoader,
+		Class<T> proxyInterface,
+		final JsonRpcClient client,
+		Socket socket) throws IOException {
+
+		// create and return the proxy
+		return createProxy(
+			classLoader, proxyInterface, client,
+			socket.getInputStream(), socket.getOutputStream());
+	}
 
 	/**
 	 * Creates a {@link Proxy} of the given {@link proxyInterface}
