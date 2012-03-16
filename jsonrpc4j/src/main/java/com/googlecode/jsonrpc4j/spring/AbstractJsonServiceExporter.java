@@ -47,19 +47,19 @@ public abstract class AbstractJsonServiceExporter
 		throws Exception {
 
 		// find the ObjectMapper
-		if (objectMapper==null
-			&& applicationContext!=null
+		if (objectMapper == null
+			&& applicationContext != null
 			&& applicationContext.containsBean("objectMapper")) {
-			objectMapper = (ObjectMapper)applicationContext.getBean("objectMapper");
+			objectMapper = (ObjectMapper) applicationContext.getBean("objectMapper");
 		}
-		if (objectMapper==null
-			&& applicationContext!=null) {
+		if (objectMapper == null && applicationContext != null) {
 			try {
-				objectMapper = (ObjectMapper)BeanFactoryUtils.beanOfTypeIncludingAncestors(
-					applicationContext, ObjectMapper.class);
-			} catch(Exception e) {
-				objectMapper = new ObjectMapper();
-			}
+				objectMapper = (ObjectMapper)BeanFactoryUtils
+					.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
+			} catch (Exception e) { /* no-op */ }
+		}
+		if (objectMapper==null) {
+			objectMapper = new ObjectMapper();
 		}
 
 		// create the server

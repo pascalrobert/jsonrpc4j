@@ -59,9 +59,10 @@ public class JsonProxyFactoryBean
 			try {
 				objectMapper = (ObjectMapper)BeanFactoryUtils
 					.beanOfTypeIncludingAncestors(applicationContext, ObjectMapper.class);
-			} catch (Exception e) {
-				objectMapper = new ObjectMapper();
-			}
+			} catch (Exception e) { /* no-op */ }
+		}
+		if (objectMapper==null) {
+			objectMapper = new ObjectMapper();
 		}
 
 		// create JsonRpcHttpClient
