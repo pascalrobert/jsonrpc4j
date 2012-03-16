@@ -16,6 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLException;
 
 /**
  * A multi-threaded streaming server that uses JSON-RPC
@@ -178,6 +179,10 @@ public class StreamServer {
 
 				} catch (SocketTimeoutException e) {
 					// this is expected because of so_timeout
+
+				} catch(SSLException ssle) {
+					LOGGER.log(Level.SEVERE, "SSLException while listening for clients, terminating", ssle);
+					break;
 					
 				} catch(IOException ioe) {
 					// this could be because the ServerSocket was closed
@@ -231,6 +236,27 @@ public class StreamServer {
 				output.close();
 			} catch (IOException e) { /* no-op */ }
 		}
+	}
+
+	/**
+	 * @return the maxClientErrors
+	 */
+	public int getMaxClientErrors() {
+		return maxClientErrors;
+	}
+
+	/**
+	 * @param maxClientErrors the maxClientErrors to set
+	 */
+	public void setMaxClientErrors(int maxClientErrors) {
+		this.maxClientErrors = maxClientErrors;
+	}
+
+	/**
+	 * @return the isStarted
+	 */
+	public boolean isStarted() {
+		return isStarted.get();
 	}
 
 }

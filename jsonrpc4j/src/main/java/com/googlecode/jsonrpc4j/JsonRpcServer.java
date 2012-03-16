@@ -55,7 +55,6 @@ public class JsonRpcServer {
 	private Object handler;
 	private Class<?> remoteInterface;
 
-
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
 	 * all calls to the given {@code handler} {@link Object} but only

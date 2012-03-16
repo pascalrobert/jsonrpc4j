@@ -10,14 +10,12 @@ import org.springframework.beans.factory.DisposableBean;
 import com.googlecode.jsonrpc4j.StreamServer;
 
 /**
- * {@link RemoteExporter} that exports services using Json
- * according to the JSON-RPC proposal specified at:
- * <a href="http://groups.google.com/group/json-rpc">
- * http://groups.google.com/group/json-rpc</a>.
+ * A stream service exporter that exports multiple
+ * services as a single service.
  *
  */
-public class JsonStreamServiceExporter
-	extends AbstractJsonServiceExporter
+public class CompositeJsonStreamServiceExporter
+	extends AbstractCompositeJsonServiceExporter
 	implements DisposableBean {
 
 	public static final int DEFAULT_MAX_THREADS			= 50;
@@ -32,16 +30,16 @@ public class JsonStreamServiceExporter
 	private int backlog			= DEFAULT_BACKLOG;
 	private int maxClientErrors	= DEFAULT_MAX_CLIENT_ERRORS;
 	private String hostName		= DEFAULT_HOSTNAME;
-	
+
 	private StreamServer streamServer;
 
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	protected void exportService()
 		throws Exception {
 
+		// export
 		// create a stream server if needed
 		if (streamServer==null) {
 	
