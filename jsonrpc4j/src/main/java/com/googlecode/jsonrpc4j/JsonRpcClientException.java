@@ -3,12 +3,12 @@ package com.googlecode.jsonrpc4j;
 import org.codehaus.jackson.JsonNode;
 
 /**
- * Exception thrown by a JSON-RPC client when
+ * Unchecked Exception thrown by a JSON-RPC client when
  * an error occurs.
  */
 @SuppressWarnings("serial")
 public class JsonRpcClientException
-	extends Exception {
+	extends RuntimeException {
 
 	private int code;
 	private JsonNode data;

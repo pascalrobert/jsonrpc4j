@@ -163,9 +163,7 @@ public class ServerClientTest {
 			clientService.undelcaredExceptionThrown();
 			fail("Expecting exception");
 		} catch(Throwable t) {
-			assertTrue(UndeclaredThrowableException.class.isInstance(t));
-			UndeclaredThrowableException ute = UndeclaredThrowableException.class.cast(t);
-			assertTrue(JsonRpcClientException.class.isInstance(ute.getUndeclaredThrowable()));
+			assertTrue(JsonRpcClientException.class.isInstance(t));
 		}
 
 	}
