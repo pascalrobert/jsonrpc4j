@@ -1,7 +1,9 @@
 package com.googlecode.jsonrpc4j;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
+import java.net.ProtocolException;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.Collections;
@@ -75,11 +77,35 @@ public class JsonRpcHttpClient
 	 * Invokes the given method with the given arguments.
 	 * @param methodName the name of the method to invoke
 	 * @param arguments the arguments to the method
+	 * @throws Throwable on error
+	 */
+	public void invoke(String methodName, Map<String, Object> arguments)
+		throws Throwable {
+		invoke(methodName, arguments, null, new HashMap<String, String>());
+	}
+
+	/**
+	 * Invokes the given method with the given arguments.
+	 * @param methodName the name of the method to invoke
+	 * @param arguments the arguments to the method
 	 * @param extraHeaders extra headers to add to the request
 	 * @throws Throwable on error
 	 */
 	public void invoke(
 		String methodName, Object[] arguments, Map<String, String> extraHeaders)
+		throws Throwable {
+		invoke(methodName, arguments, null, new HashMap<String, String>());
+	}
+
+	/**
+	 * Invokes the given method with the given arguments.
+	 * @param methodName the name of the method to invoke
+	 * @param arguments the arguments to the method
+	 * @param extraHeaders extra headers to add to the request
+	 * @throws Throwable on error
+	 */
+	public void invoke(
+		String methodName, Map<String, Object> arguments, Map<String, String> extraHeaders)
 		throws Throwable {
 		invoke(methodName, arguments, null, new HashMap<String, String>());
 	}
@@ -105,6 +131,46 @@ public class JsonRpcHttpClient
 	 * @param methodName the name of the method to invoke
 	 * @param arguments the arguments to the method
 	 * @param returnType the return type
+	 * @return the return value
+	 * @throws Throwable on error
+	 */
+	public Object invoke(
+		String methodName, Map<String, Object> arguments, Type returnType)
+		throws Throwable {
+		return invoke(methodName, arguments, returnType, new HashMap<String, String>());
+	}
+
+	/**
+	 * Invokes the given method with the given arguments and returns
+	 * an object of the given type, or null if void.
+	 * @param methodName the name of the method to invoke
+	 * @param arguments the arguments to the method
+	 * @param returnType the return type
+	 * @param extraHeaders extra headers to add to the request
+	 * @return the return value
+	 * @throws Throwable on error
+	 */
+	public Object invoke(
+		String methodName, Map<String, Object> arguments, Type returnType,
+		Map<String, String> extraHeaders)
+		throws Throwable {
+
+		// create URLConnection
+		HttpURLConnection con = openConnection(extraHeaders);
+
+		// invoke it
+		super.invoke(methodName, arguments, con.getOutputStream());
+
+		// read and return value
+		return super.readResponse(returnType, con.getInputStream());
+	}
+
+	/**
+	 * Invokes the given method with the given arguments and returns
+	 * an object of the given type, or null if void.
+	 * @param methodName the name of the method to invoke
+	 * @param arguments the arguments to the method
+	 * @param returnType the return type
 	 * @param extraHeaders extra headers to add to the request
 	 * @return the return value
 	 * @throws Throwable on error
@@ -114,6 +180,25 @@ public class JsonRpcHttpClient
 		Map<String, String> extraHeaders)
 		throws Throwable {
 
+		// create URLConnection
+		HttpURLConnection con = openConnection(extraHeaders);
+
+		// invoke it
+		super.invoke(methodName, arguments, con.getOutputStream());
+
+		// read and return value
+		return super.readResponse(returnType, con.getInputStream());
+	}
+
+	/**
+	 * Opens a connection to the server.
+	 * @param extraHeaders extra headers to add to the request
+	 * @return the connection
+	 * @throws IOException 
+	 */
+	private HttpURLConnection openConnection(Map<String, String> extraHeaders)
+		throws IOException {
+		
 		// create URLConnection
 		HttpURLConnection con = (HttpURLConnection)serviceUrl.openConnection(connectionProxy);
 		con.setConnectTimeout(connectionTimeoutMillis);
@@ -138,11 +223,8 @@ public class JsonRpcHttpClient
 		// open the connection
 		con.connect();
 
-		// invoke it
-		super.invoke(methodName, arguments, con.getOutputStream());
-
-		// read and return value
-		return super.readResponse(returnType, con.getInputStream());
+		// return it
+		return con;
 	}
 
 	/**
