@@ -198,6 +198,11 @@ public class JsonRpcClient {
 		if (jsonObject.has("result")
 			&& !jsonObject.get("result").isNull()
 			&& jsonObject.get("result")!=null) {
+			if (returnType==null) {
+				LOGGER.warning(
+					"Server returned result but returnType is null");
+				return null;
+			}
 			return mapper.readValue( 
 				jsonObject.get("result"), TypeFactory.type(returnType));
 		}
