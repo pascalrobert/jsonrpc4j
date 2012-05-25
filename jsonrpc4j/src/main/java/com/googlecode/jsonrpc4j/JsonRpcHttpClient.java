@@ -100,6 +100,24 @@ public class JsonRpcHttpClient
 	 * 
 	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
 	 * @param methodName the name of the method to invoke
+	 * @param argument the arguments to the method
+	 * @param returnType the return type
+	 * @return the return value
+	 * @throws Throwable on error
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T invoke(
+		String methodName, Object argument, Class<T> clazz)
+		throws Throwable {
+		return (T)invoke(methodName, argument, Type.class.cast(clazz));
+	}
+
+	/**
+	 * Invokes the given method with the given arguments and returns
+	 * an object of the given type, or null if void.
+	 * 
+	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
+	 * @param methodName the name of the method to invoke
 	 * @param arguments the arguments to the method
 	 * @param returnType the return type
 	 * @param extraHeaders extra headers to add to the request
@@ -119,6 +137,26 @@ public class JsonRpcHttpClient
 
 		// read and return value
 		return super.readResponse(returnType, con.getInputStream());
+	}
+
+	/**
+	 * Invokes the given method with the given arguments and returns
+	 * an object of the given type, or null if void.
+	 * 
+	 * @see JsonRpcClient#writeRequest(String, Object, java.io.OutputStream, String)
+	 * @param methodName the name of the method to invoke
+	 * @param arguments the arguments to the method
+	 * @param returnType the return type
+	 * @param extraHeaders extra headers to add to the request
+	 * @return the return value
+	 * @throws Throwable on error
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T invoke(
+		String methodName, Object argument, Class<T> clazz,
+		Map<String, String> extraHeaders)
+		throws Throwable {
+		return (T)invoke(methodName, argument, Type.class.cast(clazz), extraHeaders);
 	}
 
 	/**

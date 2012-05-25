@@ -79,6 +79,29 @@ public class JsonRpcClient {
 
 	/**
 	 * Invokes the given method on the remote service
+	 * passing the given arguments, a generated id and reads
+	 * a response.
+	 *
+	 * @see #writeRequest(String, Object, OutputStream, String)
+	 * @param methodName the method to invoke
+	 * @param argument the argument to pass to the method
+	 * @param clazz the expected return type
+	 * @param ops the {@link OutputStream} to write to
+	 * @param ips the {@link InputStream} to read from
+	 * @return the returned Object
+	 * @throws Throwable on error
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T invokeAndReadResponse(
+		String methodName, Object argument, Class<T> clazz,
+		OutputStream ops, InputStream ips)
+		throws Throwable {
+		return (T)invokeAndReadResponse(
+			methodName, argument, Type.class.cast(clazz), ops, ips);
+	}
+
+	/**
+	 * Invokes the given method on the remote service
 	 * passing the given arguments and reads a response.
 	 *
 	 * @see #writeRequest(String, Object, OutputStream, String)
@@ -102,6 +125,30 @@ public class JsonRpcClient {
 
 		// read it
 		return readResponse(returnType, ips);
+	}
+
+	/**
+	 * Invokes the given method on the remote service
+	 * passing the given arguments and reads a response.
+	 *
+	 * @see #writeRequest(String, Object, OutputStream, String)
+	 * @param methodName the method to invoke
+	 * @param argument the argument to pass to the method
+	 * @param clazz the expected return type
+	 * @param ops the {@link OutputStream} to write to
+	 * @param ips the {@link InputStream} to read from
+	 * @param id id to send with the JSON-RPC request
+	 * @return the returned Object
+	 * @throws Throwable if there is an error
+	 * 	while reading the response
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T invokeAndReadResponse(
+		String methodName, Object argument, Class<T> clazz,
+		OutputStream ops, InputStream ips, String id)
+		throws Throwable {
+		return (T)invokeAndReadResponse(
+			methodName, argument, Type.class.cast(clazz), ops, ips, id);
 	}
 
 	/**
@@ -158,6 +205,21 @@ public class JsonRpcClient {
 		throws IOException {
 		writeRequest(methodName, argument, ops, null);
 		ops.flush();
+	}
+
+	/**
+	 * Reads a JSON-PRC response from the server.  This blocks until
+	 * a response is received.
+	 *
+	 * @param returnType the expected return type
+	 * @param ips the {@link InputStream} to read from
+	 * @return the object returned by the JSON-RPC response
+	 * @throws Throwable on error
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T readResponse(Class<T> clazz, InputStream ips)
+		throws Throwable {
+		return (T)readResponse((Type)clazz, ips);
 	}
 
 	/**
