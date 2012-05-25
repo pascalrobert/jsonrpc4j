@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
@@ -56,12 +57,12 @@ public class JsonRpcClient {
 
 	/**
 	 * Invokes the given method on the remote service
-	 * passing the given arguments and reads a response
-	 * expecting a return value.  This is a standard
-	 * JSON-RPC request.
+	 * passing the given arguments, a generated id and reads
+	 * a response.
 	 *
+	 * @see #writeRequest(String, Object, OutputStream, String)
 	 * @param methodName the method to invoke
-	 * @param arguments the arguments to pass to the method
+	 * @param argument the argument to pass to the method
 	 * @param returnType the expected return type
 	 * @param ops the {@link OutputStream} to write to
 	 * @param ips the {@link InputStream} to read from
@@ -69,43 +70,20 @@ public class JsonRpcClient {
 	 * @throws Throwable on error
 	 */
 	public Object invokeAndReadResponse(
-		String methodName, Object[] arguments, Type returnType,
+		String methodName, Object argument, Type returnType,
 		OutputStream ops, InputStream ips)
 		throws Throwable {
 		return invokeAndReadResponse(
-			methodName, arguments, returnType, ops, ips, random.nextLong()+"");
+			methodName, argument, returnType, ops, ips, random.nextLong()+"");
 	}
 
 	/**
 	 * Invokes the given method on the remote service
-	 * passing the given arguments and reads a response
-	 * expecting a return value.  This is a standard
-	 * JSON-RPC request.
+	 * passing the given arguments and reads a response.
 	 *
+	 * @see #writeRequest(String, Object, OutputStream, String)
 	 * @param methodName the method to invoke
-	 * @param arguments the arguments to pass to the method
-	 * @param returnType the expected return type
-	 * @param ops the {@link OutputStream} to write to
-	 * @param ips the {@link InputStream} to read from
-	 * @return the returned Object
-	 * @throws Throwable on error
-	 */
-	public Object invokeAndReadResponse(
-		String methodName, Map<String, Object> arguments, Type returnType,
-		OutputStream ops, InputStream ips)
-		throws Throwable {
-		return invokeAndReadResponse(
-			methodName, arguments, returnType, ops, ips, random.nextLong()+"");
-	}
-
-	/**
-	 * Invokes the given method on the remote service
-	 * passing the given arguments and reads a response
-	 * expecting a return value.  This is a standard
-	 * JSON-RPC request.
-	 *
-	 * @param methodName the method to invoke
-	 * @param arguments the arguments to pass to the method
+	 * @param argument the argument to pass to the method
 	 * @param returnType the expected return type
 	 * @param ops the {@link OutputStream} to write to
 	 * @param ips the {@link InputStream} to read from
@@ -115,40 +93,12 @@ public class JsonRpcClient {
 	 * 	while reading the response
 	 */
 	public Object invokeAndReadResponse(
-		String methodName, Object[] arguments, Type returnType,
+		String methodName, Object argument, Type returnType,
 		OutputStream ops, InputStream ips, String id)
 		throws Throwable {
 
 		// invoke it
-		invoke(methodName, arguments, ops, id);
-
-		// read it
-		return readResponse(returnType, ips);
-	}
-
-	/**
-	 * Invokes the given method on the remote service
-	 * passing the given arguments and reads a response
-	 * expecting a return value.  This is a standard
-	 * JSON-RPC request.
-	 *
-	 * @param methodName the method to invoke
-	 * @param arguments the arguments to pass to the method
-	 * @param returnType the expected return type
-	 * @param ops the {@link OutputStream} to write to
-	 * @param ips the {@link InputStream} to read from
-	 * @param id id to send with the JSON-RPC request
-	 * @return the returned Object
-	 * @throws Throwable if there is an error
-	 * 	while reading the response
-	 */
-	public Object invokeAndReadResponse(
-		String methodName, Map<String, Object> arguments, Type returnType,
-		OutputStream ops, InputStream ips, String id)
-		throws Throwable {
-
-		// invoke it
-		invoke(methodName, arguments, ops, id);
+		invoke(methodName, argument, ops, id);
 
 		// read it
 		return readResponse(returnType, ips);
@@ -156,99 +106,57 @@ public class JsonRpcClient {
 
 	/**
 	 * Invokes the given method on the remote service passing
-	 * the given arguments without reading a return response.
-	 * An id is generated.
+	 * the given argument.  An id is generated automatically.  To read
+	 * the response {@link #readResponse(Type, InputStream)}  must be
+	 * subsequently called.
 	 *
+	 * @see #writeRequest(String, Object, OutputStream, String)
 	 * @param methodName the method to invoke
-	 * @param arguments the arguments to pass to the method
+	 * @param argument the arguments to pass to the method
 	 * @param ops the {@link OutputStream} to write to
 	 * @throws IOException on error
 	 */
 	public void invoke(
-		String methodName, Object[] arguments, OutputStream ops)
+		String methodName, Object argument, OutputStream ops)
 		throws IOException {
-		invoke(methodName, arguments, ops, random.nextLong()+"");
+		invoke(methodName, argument, ops, random.nextLong()+"");
 	}
 
 	/**
 	 * Invokes the given method on the remote service passing
-	 * the given arguments without reading a return response.
-	 * An id is generated.
+	 * the given argument.  To read the response
+	 * {@link #readResponse(Type, InputStream)}  must be subsequently
+	 * called.
 	 *
+	 * @see #writeRequest(String, Object, OutputStream, String)
 	 * @param methodName the method to invoke
-	 * @param arguments the arguments to pass to the method
-	 * @param ops the {@link OutputStream} to write to
-	 * @throws IOException on error
-	 */
-	public void invoke(
-		String methodName, Map<String, Object> arguments, OutputStream ops)
-		throws IOException {
-		invoke(methodName, arguments, ops, random.nextLong()+"");
-	}
-
-	/**
-	 * Invokes the given method on the remote service passing
-	 * the given arguments without reading a return response.
-	 *
-	 * @param methodName the method to invoke
-	 * @param arguments the arguments to pass to the method
+	 * @param argument the argument to pass to the method
 	 * @param ops the {@link OutputStream} to write to
 	 * @param id the request id
 	 * @throws IOException on error
 	 */
 	public void invoke(
-		String methodName, Object[] arguments, OutputStream ops, String id)
+		String methodName, Object argument, OutputStream ops, String id)
 		throws IOException {
-		writeRequest(methodName, arguments, ops, id);
+		writeRequest(methodName, argument, ops, id);
 		ops.flush();
 	}
 
 	/**
 	 * Invokes the given method on the remote service passing
-	 * the given arguments without reading a return response.
+	 * the given argument without reading or expecting a return
+	 * response.
 	 *
+	 * @see #writeRequest(String, Object, OutputStream, String)
 	 * @param methodName the method to invoke
-	 * @param arguments the arguments to pass to the method
-	 * @param ops the {@link OutputStream} to write to
-	 * @param id the request id
-	 * @throws IOException on error
-	 */
-	public void invoke(
-		String methodName, Map<String, Object> arguments, OutputStream ops, String id)
-		throws IOException {
-		writeRequest(methodName, arguments, ops, id);
-		ops.flush();
-	}
-
-	/**
-	 * Invokes the given method on the remote service passing
-	 * the given arguments without expecting a return response.
-	 *
-	 * @param methodName the method to invoke
-	 * @param arguments the arguments to pass to the method
+	 * @param argument the argument to pass to the method
 	 * @param ops the {@link OutputStream} to write to
 	 * @throws IOException on error
 	 */
 	public void invokeNotification(
-		String methodName, Object[] arguments, OutputStream ops)
+		String methodName, Object argument, OutputStream ops)
 		throws IOException {
-		writeNotification(methodName, arguments, ops);
-		ops.flush();
-	}
-
-	/**
-	 * Invokes the given method on the remote service passing
-	 * the given arguments without expecting a return response.
-	 *
-	 * @param methodName the method to invoke
-	 * @param arguments the arguments to pass to the method
-	 * @param ops the {@link OutputStream} to write to
-	 * @throws IOException on error
-	 */
-	public void invokeNotification(
-		String methodName, Map<String, Object> arguments, OutputStream ops)
-		throws IOException {
-		writeRequest(methodName, arguments, ops, null);
+		writeRequest(methodName, argument, ops, null);
 		ops.flush();
 	}
 
@@ -310,67 +218,59 @@ public class JsonRpcClient {
 		// no return type
 		return null;
 	}
-	
+
 	/**
-	 * Writes a JSON-RPC request to the given
-	 * {@link OutputStream}.
+	 * Writes a JSON-RPC request to the given {@link OutputStream}.
+	 * If the value passed for argument is null then the {@code params}
+	 * property is ommitted from the JSON-RPC request.  If the argument
+	 * is not not null then it is used as the value of the {@code params}
+	 * property.  This means that if a POJO is passed as the argument
+	 * that it's properties will be used as the param, ie:
+	 * <pre>
+	 * class Person {
+	 *   String firstName;
+	 *   String lastName;
+	 * }
+	 * </pre>
+	 * becomes:
+	 * <pre>
+	 * 	"params" : {
+	 * 		"firstName" : ..;
+	 * 		"lastName" : ..;
+	 * }
+	 * </pre>
+	 * The same would be true of a {@link Map} containing the keys
+	 * {@code firstName} and {@link lastName}.  If the argument passed
+	 * in implements the {@link Collection} interface or is an array
+	 * then the values are used as indexed parameters in the order that
+	 * they appear in the {@link Collection} or array.
 	 *
 	 * @param methodName the method to invoke
-	 * @param arguments the method arguments
+	 * @param argument the method argument
 	 * @param ops the {@link OutputStream} to write to
 	 * @param id the request id
 	 * @throws IOException on error
 	 */
 	public void writeRequest(
-		String methodName, Object[] arguments, OutputStream ops, String id)
+		String methodName, Object argument, OutputStream ops, String id)
 		throws IOException {
-		internalWriteRequest(methodName, arguments, ops, id);
-	}
-
-	/**
-	 * Writes a JSON-RPC request to the given
-	 * {@link OutputStream}.
-	 *
-	 * @param methodName the method to invoke
-	 * @param arguments the method arguments
-	 * @param ops the {@link OutputStream} to write to
-	 * @param id the request id
-	 * @throws IOException on error
-	 */
-	public void writeRequest(
-		String methodName, Map<String, Object> arguments, OutputStream ops, String id)
-		throws IOException {
-		internalWriteRequest(methodName, arguments, ops, id);
+		internalWriteRequest(methodName, argument, ops, id);
 	}
 
 	/**
 	 * Writes a JSON-RPC notification to the given
 	 * {@link OutputStream}.
-	 *
+	 * 
+	 * @see #writeRequest(String, Object, OutputStream, String)
 	 * @param methodName the method to invoke
-	 * @param arguments the method arguments
+	 * @param argument the method argument
 	 * @param ops the {@link OutputStream} to write to
 	 * @throws IOException on error
 	 */
 	public void writeNotification(
-		String methodName, Object[] arguments, OutputStream ops)
+		String methodName, Object argument, OutputStream ops)
 		throws IOException {
-		internalWriteRequest(methodName, arguments, ops, null);
-	}
-
-	/**
-	 * Writes a JSON-RPC notification to the given
-	 * {@link OutputStream}.
-	 *
-	 * @param methodName the method to invoke
-	 * @param arguments the method arguments
-	 * @param ops the {@link OutputStream} to write to
-	 * @throws IOException on error
-	 */
-	public void writeNotification(
-		String methodName, Map<String, Object> arguments, OutputStream ops)
-		throws IOException {
-		internalWriteRequest(methodName, arguments, ops, null);
+		internalWriteRequest(methodName, argument, ops, null);
 	}
 
 	/**
@@ -396,19 +296,27 @@ public class JsonRpcClient {
 		request.put("method", methodName);
 		
 		// object array args
-		if (arguments!=null && Object[].class.isInstance(arguments)) {
+		if (arguments!=null && arguments.getClass().isArray()) {
 			Object[] args = Object[].class.cast(arguments);
 			if (args.length>0) {
-				request.put("params", mapper.valueToTree(args));
+				request.put("params", mapper.valueToTree(Object[].class.cast(arguments)));
 			}
 		
+		// collection args
+		} else if (arguments!=null && Collection.class.isInstance(arguments)) {
+			if (!Collection.class.cast(arguments).isEmpty()) {
+				request.put("params", mapper.valueToTree(arguments));
+			}
+			
 		// map args
 		} else if (arguments!=null && Map.class.isInstance(arguments)) {
-			@SuppressWarnings("unchecked")
-			Map<String, Object> args = Map.class.cast(arguments);
-			if (!args.isEmpty()) {
-				request.put("params", mapper.valueToTree(args));
+			if (!Map.class.cast(arguments).isEmpty()) {
+				request.put("params", mapper.valueToTree(arguments));
 			}
+
+		// other args
+		} else if (arguments!=null) {
+			request.put("params", mapper.valueToTree(arguments));
 		}
 
 		// show to listener
