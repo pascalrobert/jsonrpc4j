@@ -64,7 +64,7 @@ public abstract class AbstractCompositeJsonServiceExporter
 		}
 
 		// create the service
-		Object service = ProxyUtil.createCompositeService(
+		Object service = ProxyUtil.createCompositeServiceProxy(
 			getClass().getClassLoader(), services,
 			serviceInterfaces, allowMultipleInheritance);
 

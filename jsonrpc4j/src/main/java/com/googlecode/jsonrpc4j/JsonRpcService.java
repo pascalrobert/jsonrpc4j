@@ -19,4 +19,10 @@ public @interface JsonRpcService {
 	 */
 	String value();
 
+	/**
+	 * Whether or not to use named parameters.
+	 * @return
+	 */
+	boolean useNamedParams() default false;
+
 }

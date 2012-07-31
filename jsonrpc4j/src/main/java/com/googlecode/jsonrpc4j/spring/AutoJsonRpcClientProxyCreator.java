@@ -53,8 +53,9 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
           if (annotationMetadata.isAnnotated(jsonRpcPathAnnotation)) {
             String className = classMetadata.getClassName();
             String path = (String) annotationMetadata.getAnnotationAttributes(jsonRpcPathAnnotation).get("value");
+            boolean useNamedParams = (Boolean) annotationMetadata.getAnnotationAttributes(jsonRpcPathAnnotation).get("useNamedParams");
             LOG.debug(format("Found JSON-RPC service to proxy [%s] on path '%s'.", className, path));
-            registerJsonProxyBean(dlbf, className, path);
+            registerJsonProxyBean(dlbf, className, path, useNamedParams);
           }
         }
       }
@@ -73,11 +74,12 @@ public class AutoJsonRpcClientProxyCreator implements BeanFactoryPostProcessor, 
   /**
    * Registers a new proxy bean with the bean factory.
    */
-  private void registerJsonProxyBean(DefaultListableBeanFactory dlbf, String className, String path) {
-    BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.
-        rootBeanDefinition(JsonProxyFactoryBean.class).
-        addPropertyValue("serviceUrl", appendBasePath(path)).
-        addPropertyValue("serviceInterface", className);
+  private void registerJsonProxyBean(DefaultListableBeanFactory dlbf, String className, String path, boolean useNamedParams) {
+    BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder
+    	.rootBeanDefinition(JsonProxyFactoryBean.class)
+        .addPropertyValue("serviceUrl", appendBasePath(path))
+        .addPropertyValue("serviceInterface", className)
+        .addPropertyValue("useNamedParams", useNamedParams);
     dlbf.registerBeanDefinition(className+"-clientProxy", beanDefinitionBuilder.getBeanDefinition());
   }
 

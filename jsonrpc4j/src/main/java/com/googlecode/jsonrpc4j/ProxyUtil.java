@@ -31,9 +31,9 @@ public abstract class ProxyUtil {
 	 * @param allowMultipleInheritance whether or not to allow multiple inheritance
 	 * @return the object
 	 */
-	public static Object createCompositeService(
+	public static Object createCompositeServiceProxy(
 		ClassLoader classLoader, Object[] services, boolean allowMultipleInheritance) {
-		return createCompositeService(classLoader, services, null, allowMultipleInheritance);
+		return createCompositeServiceProxy(classLoader, services, null, allowMultipleInheritance);
 	}
 
 	/**
@@ -46,7 +46,7 @@ public abstract class ProxyUtil {
 	 * @param allowMultipleInheritance whether or not to allow multiple inheritance
 	 * @return the object
 	 */
-	public static Object createCompositeService(
+	public static Object createCompositeServiceProxy(
 		ClassLoader classLoader, Object[] services,
 		Class<?>[] serviceInterfaces, boolean allowMultipleInheritance) {
 		
@@ -112,15 +112,15 @@ public abstract class ProxyUtil {
 	 * @param socket the {@link Socket}
 	 * @return the proxied interface
 	 */
-	public static <T> T createProxy(
+	public static <T> T createClientProxy(
 		ClassLoader classLoader,
 		Class<T> proxyInterface,
 		final JsonRpcClient client,
 		Socket socket) throws IOException {
 
 		// create and return the proxy
-		return createProxy(
-			classLoader, proxyInterface, client,
+		return createClientProxy(
+			classLoader, proxyInterface, false, client,
 			socket.getInputStream(), socket.getOutputStream());
 	}
 
@@ -136,9 +136,10 @@ public abstract class ProxyUtil {
 	 * @return the proxied interface
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T createProxy(
+	public static <T> T createClientProxy(
 		ClassLoader classLoader,
 		Class<T> proxyInterface,
+		final boolean useNamedParams,
 		final JsonRpcClient client,
 		final InputStream ips,
 		final OutputStream ops) {
@@ -150,8 +151,9 @@ public abstract class ProxyUtil {
 			new InvocationHandler() {
 				public Object invoke(Object proxy, Method method, Object[] args)
 					throws Throwable {
+					Object arguments = ReflectionUtil.parseArguments(method, args, useNamedParams);
 					return client.invokeAndReadResponse(
-						method.getName(), args, method.getGenericReturnType(), ops, ips);
+						method.getName(), arguments, method.getGenericReturnType(), ops, ips);
 				}
 			});
 	}
@@ -167,9 +169,10 @@ public abstract class ProxyUtil {
 	 * @return the proxied interface
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T createProxy(
+	public static <T> T createClientProxy(
 		ClassLoader classLoader,
 		Class<T> proxyInterface,
+		final boolean useNamedParams,
 		final JsonRpcHttpClient client,
 		final Map<String, String> extraHeaders) {
 
@@ -180,8 +183,9 @@ public abstract class ProxyUtil {
 			new InvocationHandler() {
 				public Object invoke(Object proxy, Method method, Object[] args)
 					throws Throwable {
+					Object arguments = ReflectionUtil.parseArguments(method, args, useNamedParams);
 					return client.invoke(
-						method.getName(), args, method.getGenericReturnType(), extraHeaders);
+						method.getName(), arguments, method.getGenericReturnType(), extraHeaders);
 				}
 			});
 	}
@@ -195,11 +199,11 @@ public abstract class ProxyUtil {
 	 * @param client the {@link JsonRpcHttpClient}
 	 * @return the proxied interface
 	 */
-	public static <T> T createProxy(
+	public static <T> T createClientProxy(
 		ClassLoader classLoader,
 		Class<T> proxyInterface,
 		final JsonRpcHttpClient client) {
-		return createProxy(classLoader, proxyInterface, client, new HashMap<String, String>());
+		return createClientProxy(classLoader, proxyInterface, false, client, new HashMap<String, String>());
 	}
 
 }

@@ -70,8 +70,8 @@ public class ServerClientTest {
 		throws Throwable {
 
 		// create client service
-		Service clientService = ProxyUtil.createProxy(
-			cl, Service.class, jsonRpcClient,
+		Service clientService = ProxyUtil.createClientProxy(
+			cl, Service.class, false, jsonRpcClient,
 			clientInputStream,
 			clientOutputStream);
 
@@ -94,8 +94,8 @@ public class ServerClientTest {
 		throws Throwable {
 
 		// create client service
-		Service clientService = ProxyUtil.createProxy(
-			cl, Service.class, jsonRpcClient,
+		Service clientService = ProxyUtil.createClientProxy(
+			cl, Service.class, false, jsonRpcClient,
 			clientInputStream,
 			clientOutputStream);
 
@@ -137,8 +137,8 @@ public class ServerClientTest {
 		throws Throwable {
 
 		// create client service
-		Service clientService = ProxyUtil.createProxy(
-			cl, Service.class, jsonRpcClient,
+		Service clientService = ProxyUtil.createClientProxy(
+			cl, Service.class, false, jsonRpcClient,
 			clientInputStream,
 			clientOutputStream);
 

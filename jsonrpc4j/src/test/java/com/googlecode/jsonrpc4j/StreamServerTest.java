@@ -38,7 +38,7 @@ public class StreamServerTest {
 		Socket socket = new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort());
 
 		// create and connect with a client
-		Service service1 = ProxyUtil.createProxy(
+		Service service1 = ProxyUtil.createClientProxy(
 			this.getClass().getClassLoader(), Service.class,
 			jsonRpcClient, socket);
 
@@ -69,7 +69,7 @@ public class StreamServerTest {
 		Socket[] sockets = new Socket[5];
 		for (int i=0; i<services.length; i++) {
 			sockets[i] = new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort());
-			services[i] = ProxyUtil.createProxy(
+			services[i] = ProxyUtil.createClientProxy(
 				this.getClass().getClassLoader(), Service.class,
 				jsonRpcClient, sockets[i]);
 		}
@@ -108,7 +108,7 @@ public class StreamServerTest {
 		Socket socket = new Socket(serverSocket.getInetAddress(), serverSocket.getLocalPort());
 
 		// create and connect with a client
-		final Service service1 = ProxyUtil.createProxy(
+		final Service service1 = ProxyUtil.createClientProxy(
 			this.getClass().getClassLoader(), Service.class,
 			jsonRpcClient, socket);
 

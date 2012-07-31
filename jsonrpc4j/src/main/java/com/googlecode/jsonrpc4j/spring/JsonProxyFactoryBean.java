@@ -19,6 +19,7 @@ import org.springframework.remoting.support.UrlBasedRemoteAccessor;
 
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
 import com.googlecode.jsonrpc4j.JsonRpcClient.RequestListener;
+import com.googlecode.jsonrpc4j.ReflectionUtil;
 
 /**
  * {@link FactoryBean} for creating a {@link UrlBasedRemoteAccessor}
@@ -29,9 +30,10 @@ public class JsonProxyFactoryBean
 	extends UrlBasedRemoteAccessor
 	implements MethodInterceptor,
 	InitializingBean,
-	FactoryBean,
+	FactoryBean<Object>,
 	ApplicationContextAware {
 
+	private boolean				useNamedParams		= false;
 	private Object				proxyObject			= null;
 	private RequestListener		requestListener		= null;
 	private ObjectMapper		objectMapper		= null;
@@ -43,6 +45,7 @@ public class JsonProxyFactoryBean
 	 * {@inheritDoc}
 	 */
 	@Override
+	@SuppressWarnings("unchecked")
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
 
@@ -85,10 +88,14 @@ public class JsonProxyFactoryBean
 			? invocation.getMethod().getGenericReturnType()
 			: invocation.getMethod().getReturnType();
 
+		// get arguments
+		Object arguments = ReflectionUtil.parseArguments(
+			invocation.getMethod(), invocation.getArguments(), useNamedParams);
+
 		// invoke it
 		return jsonRpcHttpClient.invoke(
 			invocation.getMethod().getName(),
-			invocation.getArguments(),
+			arguments,
 			retType, extraHttpHeaders);
 	}
 
@@ -140,6 +147,13 @@ public class JsonProxyFactoryBean
 	 */
 	public void setRequestListener(RequestListener requestListener) {
 		this.requestListener = requestListener;
+	}
+
+	/**
+	 * @param useNamedParams the useNamedParams to set
+	 */
+	public void setUseNamedParams(boolean useNamedParams) {
+		this.useNamedParams = useNamedParams;
 	}
 
 }

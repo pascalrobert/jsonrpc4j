@@ -169,4 +169,40 @@ public abstract class ReflectionUtil {
 		return annotations;
 	}
 
+	/**
+	 * Parses the given arguments for the given method optionally
+	 * turning them into named parameters.
+	 * @param method the method
+	 * @param arguments the arguments
+	 * @param useNamedParams whether or not to used named params
+	 * @return the parsed arguments
+	 */
+	public static Object parseArguments(Method method, Object[] arguments, boolean useNamedParams) {
+		if (useNamedParams) {
+			Map<String, Object> namedParams = new HashMap<String, Object>();
+			Annotation[][] paramAnnotations = method.getParameterAnnotations();
+			for (int i=0; i<paramAnnotations.length; i++) {
+				Annotation[] ann = paramAnnotations[i];
+				boolean jsonRpcParamAnnotPresent = false;
+				for (Annotation an : ann) {
+					if (JsonRpcParam.class.isInstance(an)) {
+						JsonRpcParam jAnn = (JsonRpcParam) an;
+						namedParams.put(jAnn.value(), arguments[i]);
+						jsonRpcParamAnnotPresent = true;
+						break;
+					}
+				}
+				if (!jsonRpcParamAnnotPresent) {
+					throw new RuntimeException(
+						"useNamedParams is enabled and a JsonRpcParam annotation "
+						+"was not found at parameter index "+i+" on method "
+						+method.getName());
+				}
+			}
+			return namedParams;
+		} else {
+			return arguments;
+		}
+	}
+
 }
