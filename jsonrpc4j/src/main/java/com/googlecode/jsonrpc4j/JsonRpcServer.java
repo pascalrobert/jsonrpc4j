@@ -9,6 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -316,7 +317,16 @@ public class JsonRpcServer {
 		// get node values
 		String jsonRpc		= (jsonPrcNode!=null && !jsonPrcNode.isNull()) ? jsonPrcNode.getValueAsText() : "2.0";
 		String methodName	= (methodNode!=null && !methodNode.isNull()) ? methodNode.getValueAsText() : null;
-		String id			= (idNode!=null && !idNode.isNull()) ? idNode.getValueAsText() : null;
+		Object id = null;
+
+		// get accurate type for id
+		if (idNode != null && !idNode.isNull()) {
+			if (idNode.isNumber()) {
+				id = idNode.getNumberValue();
+			} else {
+				id = idNode.getValueAsText();
+			}
+		}
 
 		// find methods
 		Set<Method> methods = new HashSet<Method>();
@@ -383,10 +393,7 @@ public class JsonRpcServer {
 
 			// build success
 			} else {
-				response = mapper.createObjectNode();
-				response.put("jsonrpc", jsonRpc);
-				response.put("id", id);
-				response.put("result", result);
+				response = createSuccessResponse(jsonRpc, id, result);
 			}
 
 			// write it
@@ -450,7 +457,7 @@ public class JsonRpcServer {
 	 * @return the error response
 	 */
 	private ObjectNode createErrorResponse(
-		String jsonRpc, String id, int code, String message, Object data) {
+		String jsonRpc, Object id, int code, String message, Object data) {
 		ObjectNode response = mapper.createObjectNode();
 		ObjectNode error = mapper.createObjectNode();
 		error.put("code", code);
@@ -459,8 +466,47 @@ public class JsonRpcServer {
 			error.put("data",  mapper.valueToTree(data));
 		}
 		response.put("jsonrpc", jsonRpc);
-		response.put("id", id);
+		if (Integer.class.isInstance(id)) {
+			response.put("id", Integer.class.cast(id).intValue());
+		} else if (Long.class.isInstance(id)) {
+			response.put("id", Long.class.cast(id).longValue());
+		} else if (Float.class.isInstance(id)) {
+			response.put("id", Float.class.cast(id).floatValue());
+		} else if (Double.class.isInstance(id)) {
+			response.put("id", Double.class.cast(id).doubleValue());
+		} else if (BigDecimal.class.isInstance(id)) {
+			response.put("id", BigDecimal.class.cast(id));
+		} else {
+			response.put("id", String.class.cast(id));
+		}
 		response.put("error", error);
+		return response;
+	}
+
+	/**
+	 * Creates a sucess response.
+	 * @param jsonRpc
+	 * @param id
+	 * @param result
+	 * @return
+	 */
+	private ObjectNode createSuccessResponse(String jsonRpc, Object id, JsonNode result) {
+		ObjectNode response = mapper.createObjectNode();
+		response.put("jsonrpc", jsonRpc);
+		if (Integer.class.isInstance(id)) {
+			response.put("id", Integer.class.cast(id).intValue());
+		} else if (Long.class.isInstance(id)) {
+			response.put("id", Long.class.cast(id).longValue());
+		} else if (Float.class.isInstance(id)) {
+			response.put("id", Float.class.cast(id).floatValue());
+		} else if (Double.class.isInstance(id)) {
+			response.put("id", Double.class.cast(id).doubleValue());
+		} else if (BigDecimal.class.isInstance(id)) {
+			response.put("id", BigDecimal.class.cast(id));
+		} else {
+			response.put("id", String.class.cast(id));
+		}
+		response.put("result", result);
 		return response;
 	}
 

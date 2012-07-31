@@ -13,7 +13,7 @@ import org.springframework.core.io.ClassPathResource;
 /**
  * Tests for JsonRpcServer
  * 
- * @author Hans Jørgen Hoel (hansjorgen.hoel@nhst.no)
+ * @author Hans J??rgen Hoel (hansjorgen.hoel@nhst.no)
  *
  */
 public class JsonRpcServerTest {
@@ -350,6 +350,36 @@ public class JsonRpcServerTest {
 		assertEquals("stringParam1, null", json.get("result").getTextValue());
 	}
 	
+	@Test
+	public void idIntegerType() throws Exception {
+		jsonRpcServer.handle(new ClassPathResource("jsonRpcServerIntegerIdTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertTrue(json.get("id").isIntegralNumber());
+	}
+
+	@Test
+	public void idStringType() throws Exception {
+		jsonRpcServer.handle(new ClassPathResource("jsonRpcServerStringIdTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertTrue(json.get("id").isTextual());
+	}
+
+	@Test
+	public void noId() throws Exception {
+		jsonRpcServer.handle(new ClassPathResource("jsonRpcServerNoIdTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		assertTrue(json.get("id").isNull());
+	}
+
 
 	// Service and service interfaces used in test
 	
