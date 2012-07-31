@@ -282,9 +282,12 @@ public class JsonRpcServer {
 		}
 
 		// loop through each array element
+		ops.write('[');
 		for (int i=0; i<node.size(); i++) {
 			handleNode(node.get(i), ops);
+			if (i != node.size() - 1) ops.write(','); 
 		}
+		ops.write(']');
 	}
 
 	/**
