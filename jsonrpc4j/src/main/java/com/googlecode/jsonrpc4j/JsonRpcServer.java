@@ -25,13 +25,14 @@ import javax.portlet.ResourceResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.type.TypeFactory;
-import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.NullNode;
-import org.codehaus.jackson.node.ObjectNode;
-
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
 
 /**
@@ -318,18 +319,9 @@ public class JsonRpcServer {
 		JsonNode paramsNode		= node.get("params");
 
 		// get node values
-		String jsonRpc		= (jsonPrcNode!=null && !jsonPrcNode.isNull()) ? jsonPrcNode.getValueAsText() : "2.0";
-		String methodName	= (methodNode!=null && !methodNode.isNull()) ? methodNode.getValueAsText() : null;
-		Object id = null;
-
-		// get accurate type for id
-		if (idNode != null && !idNode.isNull()) {
-			if (idNode.isNumber()) {
-				id = idNode.getNumberValue();
-			} else {
-				id = idNode.getValueAsText();
-			}
-		}
+		String jsonRpc		= (jsonPrcNode!=null && !jsonPrcNode.isNull()) ? jsonPrcNode.asText() : "2.0";
+		String methodName	= (methodNode!=null && !methodNode.isNull()) ? methodNode.asText() : null;
+		Object id			= parseId(idNode);
 
 		// find methods
 		Set<Method> methods = new HashSet<Method>();
@@ -439,9 +431,11 @@ public class JsonRpcServer {
 		// convert the parameters
 		Object[] convertedParams = new Object[params.size()];
 		Type[] parameterTypes = m.getGenericParameterTypes();
+		
 		for (int i=0; i<parameterTypes.length; i++) {
-			convertedParams[i] = mapper.readValue(
-				params.get(i), TypeFactory.type(parameterTypes[i]));
+		    JsonParser paramJsonParser = mapper.treeAsTokens(params.get(i));
+		    JavaType paramJavaType = TypeFactory.defaultInstance().constructType(parameterTypes[i]);
+			convertedParams[i] = mapper.readValue(paramJsonParser, paramJavaType);
 		}
 
 		// invoke the method
@@ -535,7 +529,7 @@ public class JsonRpcServer {
 		// named parameters
 		} else if (paramsNode.isObject()) {
 			Set<String> fieldNames = new HashSet<String>();
-			Iterator<String> itr=paramsNode.getFieldNames();
+			Iterator<String> itr=paramsNode.fieldNames();
 			while (itr.hasNext()) {
 				fieldNames.add(itr.next());
 			}
@@ -853,6 +847,30 @@ public class JsonRpcServer {
 	private static class MethodAndArgs {
 		private Method method = null;
 		private List<JsonNode> arguments = new ArrayList<JsonNode>();
+	}
+
+	/**
+	 * Parses an ID.
+	 * @param node
+	 * @return
+	 */
+	private Object parseId(JsonNode node) {
+		if (node==null || node.isNull()) {
+			return null;
+		} else if (node.isDouble()) {
+			return node.asDouble();
+		} else if (node.isFloatingPointNumber()) {
+			return node.asDouble();
+		} else if (node.isInt()) {
+			return node.asInt();
+		} else if (node.isIntegralNumber()) {
+			return node.asInt();
+		} else if (node.isLong()) {
+			return node.asLong();
+		} else if (node.isTextual()) {
+			return node.asText();
+		}
+		throw new IllegalArgumentException("Unknown id type");
 	}
 
 	/**

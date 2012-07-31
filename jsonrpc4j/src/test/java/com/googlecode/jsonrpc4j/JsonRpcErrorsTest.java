@@ -1,19 +1,21 @@
 package com.googlecode.jsonrpc4j;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.ByteArrayOutputStream;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * For testing the @JsonRpcErrors and @JsonRpcError annotations
  * 
- * @author Hans Jørgen Hoel (hansjorgen.hoel@nhst.no)
+ * @author Hans J??rgen Hoel (hansjorgen.hoel@nhst.no)
  *
  */
 public class JsonRpcErrorsTest {
@@ -44,7 +46,7 @@ public class JsonRpcErrorsTest {
 		JsonNode error = json.get("error");
 
 		assertNotNull(error);
-		assertEquals(0, error.get("code").getIntValue());
+		assertEquals(0, error.get("code").intValue());
 	}
 
 	@Test
@@ -57,12 +59,12 @@ public class JsonRpcErrorsTest {
 		JsonNode error = json.get("error");
 
 		assertNotNull(error);
-		assertEquals(1234, error.get("code").getIntValue());
-		assertEquals(null, error.get("message").getTextValue());
+		assertEquals(1234, error.get("code").intValue());
+		assertEquals(null, error.get("message").textValue());
 		assertNotNull(error.get("data"));
 		JsonNode data = error.get("data");
-		assertEquals(null, data.get("message").getTextValue());
-		assertEquals(TestException.class.getName(), data.get("exceptionTypeName").getTextValue());
+		assertEquals(null, data.get("message").textValue());
+		assertEquals(TestException.class.getName(), data.get("exceptionTypeName").textValue());
 	}
 
 	@Test
@@ -75,12 +77,12 @@ public class JsonRpcErrorsTest {
 		JsonNode error = json.get("error");
 
 		assertNotNull(error);
-		assertEquals(-5678, error.get("code").getIntValue());
-		assertEquals("The message", error.get("message").getTextValue());
+		assertEquals(-5678, error.get("code").intValue());
+		assertEquals("The message", error.get("message").textValue());
 		assertNotNull(error.get("data"));
 		JsonNode data = error.get("data");
-		assertEquals("The message", data.get("message").getTextValue());
-		assertEquals(TestException.class.getName(), data.get("exceptionTypeName").getTextValue());
+		assertEquals("The message", data.get("message").textValue());
+		assertEquals(TestException.class.getName(), data.get("exceptionTypeName").textValue());
 	}
 	
 	@Test
@@ -93,12 +95,12 @@ public class JsonRpcErrorsTest {
 		JsonNode error = json.get("error");
 
 		assertNotNull(error);
-		assertEquals(1234, error.get("code").getIntValue());
-		assertEquals(testExceptionWithMessage.getMessage(), error.get("message").getTextValue());
+		assertEquals(1234, error.get("code").intValue());
+		assertEquals(testExceptionWithMessage.getMessage(), error.get("message").textValue());
 		assertNotNull(error.get("data"));
 		JsonNode data = error.get("data");
-		assertEquals(testExceptionWithMessage.getMessage(), data.get("message").getTextValue());
-		assertEquals(TestException.class.getName(), data.get("exceptionTypeName").getTextValue());
+		assertEquals(testExceptionWithMessage.getMessage(), data.get("message").textValue());
+		assertEquals(TestException.class.getName(), data.get("exceptionTypeName").textValue());
 	}
 
 	private interface ServiceInterfaceWithoutAnnotation {

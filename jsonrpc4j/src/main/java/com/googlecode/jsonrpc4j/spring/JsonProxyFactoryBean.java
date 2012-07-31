@@ -8,7 +8,6 @@ import java.util.Map;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.FactoryBean;
@@ -17,6 +16,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.remoting.support.UrlBasedRemoteAccessor;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
 import com.googlecode.jsonrpc4j.JsonRpcClient.RequestListener;
 import com.googlecode.jsonrpc4j.ReflectionUtil;

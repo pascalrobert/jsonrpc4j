@@ -4,11 +4,12 @@ import static org.junit.Assert.*;
 
 import java.io.ByteArrayOutputStream;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Tests for JsonRpcServer
@@ -54,7 +55,7 @@ public class JsonRpcServerTest {
 		JsonNode json = mapper.readTree(response);
 		
 		// Invalid parameters
-		assertEquals(-32602, json.get("error").get("code").getIntValue());		
+		assertEquals(-32602, json.get("error").get("code").intValue());		
 	}
 	
 	@Test
@@ -64,7 +65,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 		
-		assertEquals("success", json.get("result").getTextValue());
+		assertEquals("success", json.get("result").textValue());
 	}
 	
 	@Test
@@ -75,7 +76,7 @@ public class JsonRpcServerTest {
 		JsonNode json = mapper.readTree(response);
 		
 		// Invalid parameters
-		assertEquals(-32602, json.get("error").get("code").getIntValue());
+		assertEquals(-32602, json.get("error").get("code").intValue());
 	}
 	
 	@Test
@@ -87,7 +88,7 @@ public class JsonRpcServerTest {
 		JsonNode json = mapper.readTree(response);
 		
 		// Invalid parameters
-		assertEquals("success", json.get("result").getTextValue());
+		assertEquals("success", json.get("result").textValue());
 	}
 	
 	@Test
@@ -98,7 +99,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 		
-		assertEquals("success", json.get("result").getTextValue());
+		assertEquals("success", json.get("result").textValue());
 	}
 	
 	@Test
@@ -109,7 +110,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("success", json.get("result").getTextValue());
+		assertEquals("success", json.get("result").textValue());
 	}
 	
 	@Test
@@ -119,7 +120,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("noParam", json.get("result").getTextValue());
+		assertEquals("noParam", json.get("result").textValue());
 	}
 	
 	@Test
@@ -129,7 +130,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("stringParam1", json.get("result").getTextValue());
+		assertEquals("stringParam1", json.get("result").textValue());
 	}
 	
 	@Test
@@ -139,7 +140,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("intParam1", json.get("result").getTextValue());
+		assertEquals("intParam1", json.get("result").textValue());
 	}
 	
 	@Test
@@ -149,7 +150,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("stringParam1, stringParam2", json.get("result").getTextValue());
+		assertEquals("stringParam1, stringParam2", json.get("result").textValue());
 	}
 	
 	@Test
@@ -159,7 +160,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("intParam1, intParam2", json.get("result").getTextValue());
+		assertEquals("intParam1, intParam2", json.get("result").textValue());
 	}
 	
 	@Test
@@ -170,7 +171,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("stringParam1, stringParam2", json.get("result").getTextValue());
+		assertEquals("stringParam1, stringParam2", json.get("result").textValue());
 	}
 	
 	@Test
@@ -181,7 +182,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("stringParam1, stringParam2", json.get("result").getTextValue());
+		assertEquals("stringParam1, stringParam2", json.get("result").textValue());
 	}
 	
 	
@@ -198,7 +199,7 @@ public class JsonRpcServerTest {
 		JsonNode json = mapper.readTree(response);
 		
 		// Invalid parameters
-		assertEquals(-32602, json.get("error").get("code").getIntValue());		
+		assertEquals(-32602, json.get("error").get("code").intValue());		
 	}
 	
 	@Test
@@ -208,7 +209,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 		
-		assertEquals("success", json.get("result").getTextValue());
+		assertEquals("success", json.get("result").textValue());
 	}
 	
 	@Test
@@ -219,7 +220,7 @@ public class JsonRpcServerTest {
 		JsonNode json = mapper.readTree(response);
 		
 		// Method not found
-		assertEquals(-32602, json.get("error").get("code").getIntValue());
+		assertEquals(-32602, json.get("error").get("code").intValue());
 	}
 	
 	@Test
@@ -231,7 +232,7 @@ public class JsonRpcServerTest {
 		JsonNode json = mapper.readTree(response);
 		
 		// Invalid parameters
-		assertEquals(-32602, json.get("error").get("code").getIntValue());
+		assertEquals(-32602, json.get("error").get("code").intValue());
 	}
 	
 	@Test
@@ -242,7 +243,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 		
-		assertEquals("success", json.get("result").getTextValue());
+		assertEquals("success", json.get("result").textValue());
 	}
 	
 	@Test
@@ -253,7 +254,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 		
-		assertEquals("success", json.get("result").getTextValue());
+		assertEquals("success", json.get("result").textValue());
 	}
 	
 	@Test
@@ -263,7 +264,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("noParam", json.get("result").getTextValue());
+		assertEquals("noParam", json.get("result").textValue());
 	}
 	
 	@Test
@@ -273,7 +274,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("stringParam1", json.get("result").getTextValue());
+		assertEquals("stringParam1", json.get("result").textValue());
 	}
 	
 	@Test
@@ -283,7 +284,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("intParam1", json.get("result").getTextValue());
+		assertEquals("intParam1", json.get("result").textValue());
 	}
 	
 	@Test
@@ -293,7 +294,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("stringParam1, stringParam2", json.get("result").getTextValue());
+		assertEquals("stringParam1, stringParam2", json.get("result").textValue());
 	}
 	
 	@Test
@@ -303,7 +304,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("intParam1, intParam2", json.get("result").getTextValue());
+		assertEquals("intParam1, intParam2", json.get("result").textValue());
 	}
 	
 	@Test
@@ -314,7 +315,7 @@ public class JsonRpcServerTest {
 		JsonNode json = mapper.readTree(response);
 		
 		// Invalid parameters
-		assertEquals(-32602, json.get("error").get("code").getIntValue());
+		assertEquals(-32602, json.get("error").get("code").intValue());
 	}
 	
 	@Test
@@ -325,7 +326,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("stringParam1, stringParam2", json.get("result").getTextValue());
+		assertEquals("stringParam1, stringParam2", json.get("result").textValue());
 	}
 	
 	@Test
@@ -336,7 +337,7 @@ public class JsonRpcServerTest {
 		JsonNode json = mapper.readTree(response);
 		
 		// Invalid parameters
-		assertEquals(-32602, json.get("error").get("code").getIntValue());
+		assertEquals(-32602, json.get("error").get("code").intValue());
 	}
 	
 	@Test
@@ -347,7 +348,7 @@ public class JsonRpcServerTest {
 		String response = baos.toString(JSON_ENCODING);
 		JsonNode json = mapper.readTree(response);
 
-		assertEquals("stringParam1, null", json.get("result").getTextValue());
+		assertEquals("stringParam1, null", json.get("result").textValue());
 	}
 	
 	@Test

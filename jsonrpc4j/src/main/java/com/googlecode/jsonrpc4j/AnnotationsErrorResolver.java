@@ -3,8 +3,7 @@ package com.googlecode.jsonrpc4j;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import org.codehaus.jackson.JsonNode;
-
+import com.fasterxml.jackson.databind.JsonNode;
 import com.googlecode.jsonrpc4j.DefaultErrorResolver.ErrorData;
 
 /**

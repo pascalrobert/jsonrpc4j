@@ -1,12 +1,12 @@
 package com.googlecode.jsonrpc4j.spring;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.remoting.support.RemoteExporter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.ErrorResolver;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
 
@@ -43,7 +43,7 @@ public abstract class AbstractJsonServiceExporter
 	/**
 	 * {@inheritDoc}
 	 */
-	public final void afterPropertiesSet()
+	public void afterPropertiesSet()
 		throws Exception {
 
 		// find the ObjectMapper

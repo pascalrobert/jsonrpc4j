@@ -3,7 +3,7 @@ package com.googlecode.jsonrpc4j;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * {@link ExceptionResolver} that supports the use

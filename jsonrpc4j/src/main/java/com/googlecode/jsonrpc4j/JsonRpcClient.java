@@ -10,10 +10,12 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.type.TypeFactory;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 
 /**
  * A JSON-RPC client.
@@ -273,8 +275,11 @@ public class JsonRpcClient {
 					"Server returned result but returnType is null");
 				return null;
 			}
-			return mapper.readValue( 
-				jsonObject.get("result"), TypeFactory.type(returnType));
+			
+			JsonParser returnJsonParser = mapper.treeAsTokens(jsonObject.get("result"));
+			JavaType returnJavaType = TypeFactory.defaultInstance().constructType(returnType);
+			
+			return mapper.readValue(returnJsonParser, returnJavaType);
 		}
 
 		// no return type

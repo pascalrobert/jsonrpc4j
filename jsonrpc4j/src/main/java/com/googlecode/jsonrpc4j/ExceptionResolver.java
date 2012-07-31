@@ -1,6 +1,6 @@
 package com.googlecode.jsonrpc4j;
 
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Resolves client {@link Throwable}s from server

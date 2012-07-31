@@ -1,17 +1,20 @@
 package com.googlecode.jsonrpc4j;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonProcessingException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public class JsonRpcClientTest {
 
@@ -56,8 +59,8 @@ public class JsonRpcClientTest {
 
 		assertTrue(node.has("params"));
 		assertTrue(node.get("params").isArray());
-		assertEquals(1, node.get("params").get(0).getIntValue());
-		assertEquals(2, node.get("params").get(1).getIntValue());
+		assertEquals(1, node.get("params").get(0).intValue());
+		assertEquals(2, node.get("params").get(1).intValue());
 	}
 
 	@Test
@@ -71,8 +74,8 @@ public class JsonRpcClientTest {
 
 		assertTrue(node.has("params"));
 		assertTrue(node.get("params").isObject());
-		assertEquals("Guvna", node.get("params").get("hello").getTextValue());
-		assertEquals(1, node.get("params").get("x").getIntValue());
+		assertEquals("Guvna", node.get("params").get("hello").textValue());
+		assertEquals(1, node.get("params").get("x").intValue());
 	}
 
 }

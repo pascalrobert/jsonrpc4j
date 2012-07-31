@@ -1,11 +1,11 @@
 package com.googlecode.jsonrpc4j.spring;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.jsonrpc4j.ErrorResolver;
 import com.googlecode.jsonrpc4j.JsonRpcServer;
 import com.googlecode.jsonrpc4j.ProxyUtil;

@@ -10,7 +10,7 @@
 
 	<properties>
 		<spring.version>3.1.2.RELEASE</spring.version>
-		<jackson.version>1.7.5</jackson.version>
+		<jackson.version>2.0.2</jackson.version>
 	</properties>
 
 	<!--
@@ -109,11 +109,23 @@
 		 | json dependencies
 		 +-->
 		<dependency>
-			<groupId>org.codehaus.jackson</groupId>
-			<artifactId>jackson-mapper-asl</artifactId>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
 			<version>${jackson.version}</version>
 			<optional>true</optional>
 		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>${jackson.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+ 			<version>${jackson.version}</version>
+ 			<optional>true</optional>
+ 		</dependency>
 
 		<!-- 
 		 | servlet\portlet dependencies

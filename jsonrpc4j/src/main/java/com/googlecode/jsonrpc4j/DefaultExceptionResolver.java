@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Default implementation of the {@link ExceptionResolver}
@@ -48,9 +48,9 @@ public class DefaultExceptionResolver
 		}
 
 		// get values
-		String exceptionTypeName = dataObject.get("exceptionTypeName").getValueAsText();
+		String exceptionTypeName = dataObject.get("exceptionTypeName").asText();
 		String message = dataObject.has("message") && dataObject.get("message").isTextual()
-			? dataObject.get("message").getValueAsText() : null;
+			? dataObject.get("message").asText() : null;
 
 		// create it
 		Throwable ret = null;
@@ -77,8 +77,8 @@ public class DefaultExceptionResolver
 	 */
 	private JsonRpcClientException createJsonRpcClientException(ObjectNode errorObject) {
 		return new JsonRpcClientException(
-			errorObject.get("code").getValueAsInt(),
-			errorObject.get("message").getValueAsText(),
+			errorObject.get("code").asInt(),
+			errorObject.get("message").asText(),
 			errorObject.get("data"));
 	}
 
