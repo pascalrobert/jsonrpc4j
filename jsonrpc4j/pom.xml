@@ -9,7 +9,7 @@
 	<url>http://code.google.com/p/jsonrpc4j/</url>
 
 	<properties>
-		<spring-remoting.version>2.0.8</spring-remoting.version>
+		<spring.version>3.1.2.RELEASE</spring.version>
 		<jackson.version>1.7.5</jackson.version>
 	</properties>
 
@@ -131,10 +131,32 @@
 		 +-->
 		<dependency>
 			<groupId>org.springframework</groupId>
-			<artifactId>spring-remoting</artifactId>
-			<version>${spring-remoting.version}</version>
+			<artifactId>spring-core</artifactId>
+			<version>${spring.version}</version>
 			<optional>true</optional>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>${spring.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-web</artifactId>
+			<version>${spring.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>${spring.version}</version>
+			<scope>test</scope>
+		</dependency>
+	
+		<!-- 
+		 | Servlet
+		 +-->
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
@@ -149,7 +171,7 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.4</version>
+			<version>4.10</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -162,12 +184,6 @@
 			<groupId>org.jmock</groupId>
 			<artifactId>jmock</artifactId>
 			<version>2.5.1</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-mock</artifactId>
-			<version>2.0.8</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
