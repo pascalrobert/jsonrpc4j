@@ -313,7 +313,7 @@ public class JsonRpcServer {
 		// validate request
 		if (!backwardsComaptible && !node.has("jsonrpc") || !node.has("method")) {
 			writeAndFlushValue(ops, createErrorResponse(
-				"jsonrpc", "null", -32600, "Invalid Request", null));
+				"2.0", "null", -32600, "Invalid Request", null));
 			return;
 		}
 
