@@ -33,15 +33,21 @@ public abstract class ReflectionUtil {
 	 * @param name the method name
 	 * @return the methods
 	 */
-	public static Set<Method> findMethods(Class<?> clazz, String name) {
-		String cacheKey = clazz.getName().concat("::").concat(name);
+	public static Set<Method> findMethods(Class<?>[] clazzes, String name) {
+		StringBuilder sb = new StringBuilder();
+		for (Class<?> clazz : clazzes) {
+			sb.append(clazz.getName()).append("::");
+		}
+		String cacheKey = sb.append(name).toString();
 		if (methodCache.containsKey(cacheKey)) {
 			return methodCache.get(cacheKey);
 		}
 		Set<Method> methods = new HashSet<Method>();
-		for (Method method : clazz.getMethods()) {
-			if (method.getName().equals(name)) {
-				methods.add(method);
+		for (Class<?> clazz : clazzes) {
+			for (Method method : clazz.getMethods()) {
+				if (method.getName().equals(name)) {
+					methods.add(method);
+				}
 			}
 		}
 		methods = Collections.unmodifiableSet(methods);

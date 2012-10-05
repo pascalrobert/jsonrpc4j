@@ -233,13 +233,18 @@ public class JsonRpcServer {
 	}
 
 	/**
-	 * Returns the handler's class or interface.
+	 * Returns the handler's class or interfaces.
 	 *
 	 * @return the class
 	 */
-	private Class<?> getHandlerClass() {
-		return (remoteInterface != null)
-			? remoteInterface : handler.getClass();
+	private Class<?>[] getHandlerInterfaces() {
+		if (remoteInterface != null) {
+			return new Class<?>[] {remoteInterface};
+		} else if (Proxy.isProxyClass(handler.getClass())) {
+			return handler.getClass().getInterfaces();
+		} else {
+			return new Class<?>[] {handler.getClass()};
+		}
 	}
 
 	/**
@@ -325,7 +330,7 @@ public class JsonRpcServer {
 
 		// find methods
 		Set<Method> methods = new HashSet<Method>();
-		methods.addAll(ReflectionUtil.findMethods(getHandlerClass(), methodName));
+		methods.addAll(ReflectionUtil.findMethods(getHandlerInterfaces(), methodName));
 		if (methods.isEmpty()) {
 			writeAndFlushValue(ops, createErrorResponse(
 				jsonRpc, id, -32601, "Method not found", null));
