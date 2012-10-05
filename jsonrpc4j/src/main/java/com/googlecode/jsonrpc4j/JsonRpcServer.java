@@ -268,8 +268,9 @@ public class JsonRpcServer {
 
 		// bail on bad data
 		} else {
-			throw new IllegalArgumentException(
-				"Invalid JsonNode type: "+node.getClass().getName());
+			this.writeAndFlushValue(
+				ops, this.createErrorResponse(
+				"2.0", "null", -32600, "Invalid Request", null));
 		}
 	}
 
