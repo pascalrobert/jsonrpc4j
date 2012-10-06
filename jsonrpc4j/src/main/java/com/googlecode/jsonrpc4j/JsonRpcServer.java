@@ -255,7 +255,7 @@ public class JsonRpcServer {
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
 	 */
-	private void handleNode(JsonNode node, OutputStream ops)
+	public void handleNode(JsonNode node, OutputStream ops)
 		throws IOException {
 
 		// handle objects
@@ -282,7 +282,7 @@ public class JsonRpcServer {
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
 	 */
-	private void handleArray(ArrayNode node, OutputStream ops)
+	public void handleArray(ArrayNode node, OutputStream ops)
 		throws IOException {
 		if (LOGGER.isLoggable(Level.FINE)) {
 			LOGGER.log(Level.FINE, "Handing "+node.size()+" requests");
@@ -305,7 +305,7 @@ public class JsonRpcServer {
 	 * @param ops the {@link OutputStream}
 	 * @throws IOException on error
 	 */
-	private void handleObject(ObjectNode node, OutputStream ops)
+	public void handleObject(ObjectNode node, OutputStream ops)
 		throws IOException {
 		if (LOGGER.isLoggable(Level.FINE)) {
 			LOGGER.log(Level.FINE, "Request: "+node.toString());
@@ -424,7 +424,7 @@ public class JsonRpcServer {
 	 * @throws IllegalAccessException on error
 	 * @throws InvocationTargetException on error
 	 */
-	private JsonNode invoke(Method m, List<JsonNode> params)
+	protected JsonNode invoke(Method m, List<JsonNode> params)
 		throws IOException,
 		IllegalAccessException,
 		InvocationTargetException {
@@ -459,7 +459,7 @@ public class JsonRpcServer {
 	 * @param data the error data (if any)
 	 * @return the error response
 	 */
-	private ObjectNode createErrorResponse(
+	protected ObjectNode createErrorResponse(
 		String jsonRpc, Object id, int code, String message, Object data) {
 		ObjectNode response = mapper.createObjectNode();
 		ObjectNode error = mapper.createObjectNode();
@@ -493,7 +493,7 @@ public class JsonRpcServer {
 	 * @param result
 	 * @return
 	 */
-	private ObjectNode createSuccessResponse(String jsonRpc, Object id, JsonNode result) {
+	protected ObjectNode createSuccessResponse(String jsonRpc, Object id, JsonNode result) {
 		ObjectNode response = mapper.createObjectNode();
 		response.put("jsonrpc", jsonRpc);
 		if (Integer.class.isInstance(id)) {
