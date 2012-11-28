@@ -41,7 +41,6 @@ public class JsonRpcMultiServer extends JsonRpcServer {
 
 	private static final Logger LOGGER = Logger.getLogger(JsonRpcMultiServer.class.getName());
 
-	private ObjectMapper mapper;
 	private Map<String, Object> handlerMap;
 	private Map<String, Class<?>> interfaceMap;
 
