@@ -1,10 +1,14 @@
 package com.googlecode.jsonrpc4j;
 
+import static com.googlecode.jsonrpc4j.ReflectionUtil.findMethods;
+import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterAnnotations;
+import static com.googlecode.jsonrpc4j.ReflectionUtil.getParameterTypes;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationHandler;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -48,6 +52,9 @@ public class JsonRpcServer {
 	public static final ErrorResolver DEFAULT_ERRROR_RESOLVER
 		= new MultipleErrorResolver(AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE);
 
+	private static Class<?> WEBPARAM_ANNOTATION_CLASS;
+	private static Method WEBPARAM_NAME_METHOD;
+
 	private boolean backwardsComaptible		= true;
 	private boolean rethrowExceptions 		= false;
 	private boolean allowExtraParams 		= false;
@@ -56,6 +63,16 @@ public class JsonRpcServer {
 	private ObjectMapper mapper;
 	private Object handler;
 	private Class<?> remoteInterface;
+
+	static {
+		ClassLoader classLoader = JsonRpcServer.class.getClassLoader();
+		try {
+			WEBPARAM_ANNOTATION_CLASS = classLoader.loadClass("javax.jws.WebParam");
+			WEBPARAM_NAME_METHOD  = WEBPARAM_ANNOTATION_CLASS.getMethod("name");
+		} catch (Exception e) {
+			// Must be Java 1.5
+		}
+	}
 
 	/**
 	 * Creates the server with the given {@link ObjectMapper} delegating
@@ -331,7 +348,7 @@ public class JsonRpcServer {
 
 		// find methods
 		Set<Method> methods = new HashSet<Method>();
-		methods.addAll(ReflectionUtil.findMethods(getHandlerInterfaces(), methodName));
+		methods.addAll(findMethods(getHandlerInterfaces(), methodName));
 		if (methods.isEmpty()) {
 			writeAndFlushValue(ops, createErrorResponse(
 				jsonRpc, id, -32601, "Method not found", null));
@@ -613,7 +630,7 @@ public class JsonRpcServer {
 			// matching parameter types
 			int mostMatches	= -1;
 			for (Method method : matchedMethods) {
-				List<Class<?>> parameterTypes = ReflectionUtil.getParameterTypes(method);
+				List<Class<?>> parameterTypes = getParameterTypes(method);
 				int numMatches = 0;
 				for (int i=0; i<parameterTypes.size() && i<numParams; i++) {
 					if (isMatchingType(paramNodes.get(i), parameterTypes.get(i))) {
@@ -668,7 +685,7 @@ public class JsonRpcServer {
 		for (Method method : methods) {
 
 			// get parameter types
-			List<Class<?>> parameterTypes = ReflectionUtil.getParameterTypes(method);
+			List<Class<?>> parameterTypes = getParameterTypes(method);
 
 			// bail early if possible
 			if (!allowExtraParams && paramNames.size()>parameterTypes.size()) {
@@ -681,39 +698,54 @@ public class JsonRpcServer {
 			List<JsonRpcParam> annotations = new ArrayList<JsonRpcParam>();
 
 			// try the deprecated parameter first
-			List<List<JsonRpcParamName>> depMethodAnnotations = ReflectionUtil
-				.getParameterAnnotations(method, JsonRpcParamName.class);
-			if (!depMethodAnnotations.isEmpty()) {
-				for (List<JsonRpcParamName> annots : depMethodAnnotations) {
-					if (annots.size()>0) {
-						final JsonRpcParamName annotation = annots.get(0);
-						annotations.add((JsonRpcParam)Proxy.newProxyInstance(
-							getClass().getClassLoader(), new Class[] {JsonRpcParam.class},
-								new InvocationHandler() {
-									public Object invoke(Object proxy, Method method, Object[] args)
-										throws Throwable {
-										if (method.getName().equals("value")) {
-											return annotation.value();
-										}
-										throw new Exception("Unknown method: "+method.getName());
-									}
-							}));
-					} else {
-						annots.add(null);
-					}
+			List<List<JsonRpcParamName>> depMethodAnnotations = getParameterAnnotations(method, JsonRpcParamName.class);
+			for (List<JsonRpcParamName> annots : depMethodAnnotations) {
+				if (annots.size()>0) {
+					final JsonRpcParamName annotation = annots.get(0);
+					annotations.add(new JsonRpcParam() {
+						public Class<? extends Annotation> annotationType() {
+							return JsonRpcParam.class;
+						}
+						public String value() {
+							return annotation.value();
+						}
+					});
+				} else {
+					annots.add(null);
+				}
+			}
+
+			@SuppressWarnings("unchecked")
+			List<List<Annotation>> jaxwsAnnotations = WEBPARAM_ANNOTATION_CLASS != null
+				? getParameterAnnotations(method, (Class<Annotation>) WEBPARAM_ANNOTATION_CLASS)
+				: new ArrayList<List<Annotation>>();
+			for (List<Annotation> annots : jaxwsAnnotations) {
+				if (annots.size()>0) {
+					final Annotation annotation = annots.get(0);
+					annotations.add(new JsonRpcParam() {
+						public Class<? extends Annotation> annotationType() {
+							return JsonRpcParam.class;
+						}
+						public String value() {
+							try {
+								return (String) WEBPARAM_NAME_METHOD.invoke(annotation);
+							} catch (Exception e) {
+								throw new RuntimeException(e);
+							}
+						}
+					});
+				} else {
+					annots.add(null);
 				}
 			}
 
 			// now try the non-deprecated parameters
-			List<List<JsonRpcParam>> methodAnnotations = ReflectionUtil
-				.getParameterAnnotations(method, JsonRpcParam.class);
-			if (!methodAnnotations.isEmpty()) {
-				for (List<JsonRpcParam> annots : methodAnnotations) {
-					if (annots.size()>0) {
-						annotations.add(annots.get(0));
-					} else {
-						annots.add(null);
-					}
+			List<List<JsonRpcParam>> methodAnnotations = getParameterAnnotations(method, JsonRpcParam.class);
+			for (List<JsonRpcParam> annots : methodAnnotations) {
+				if (annots.size()>0) {
+					annotations.add(annots.get(0));
+				} else {
+					annots.add(null);
 				}
 			}
 
