@@ -229,7 +229,7 @@ public class JsonRpcServer {
 	 * @return the {@link InputStream}
 	 * @throws IOException on error
 	 */
-	private InputStream createInputStream(String method, String id, String params)
+	protected static InputStream createInputStream(String method, String id, String params)
 		throws IOException {
 
 		// decode parameters
@@ -250,11 +250,13 @@ public class JsonRpcServer {
 	}
 
 	/**
-	 * Returns the handler's class or interfaces.
+	 * Returns the handler's class or interfaces.  The variable serviceName
+	 * is ignored in this class.
 	 *
+	 * @param serviceName the optional name of a service
 	 * @return the class
 	 */
-	private Class<?>[] getHandlerInterfaces() {
+	protected Class<?>[] getHandlerInterfaces(String serviceName) {
 		if (remoteInterface != null) {
 			return new Class<?>[] {remoteInterface};
 		} else if (Proxy.isProxyClass(handler.getClass())) {
@@ -264,6 +266,7 @@ public class JsonRpcServer {
 		}
 	}
 
+	
 	/**
 	 * Handles the given {@link JsonNode} and writes the
 	 * responses to the given {@link OutputStream}.
@@ -343,12 +346,13 @@ public class JsonRpcServer {
 
 		// get node values
 		String jsonRpc		= (jsonPrcNode!=null && !jsonPrcNode.isNull()) ? jsonPrcNode.asText() : "2.0";
-		String methodName	= (methodNode!=null && !methodNode.isNull()) ? methodNode.asText() : null;
+		String methodName	= getMethodName(methodNode);
+		String serviceName  = getServiceName(methodNode);
 		Object id			= parseId(idNode);
 
 		// find methods
 		Set<Method> methods = new HashSet<Method>();
-		methods.addAll(findMethods(getHandlerInterfaces(), methodName));
+		methods.addAll(findMethods(getHandlerInterfaces(serviceName), methodName));
 		if (methods.isEmpty()) {
 			writeAndFlushValue(ops, createErrorResponse(
 				jsonRpc, id, -32601, "Method not found", null));
@@ -367,7 +371,7 @@ public class JsonRpcServer {
 		JsonNode result = null;
 		Throwable thrown = null;
 		try {
-			result = invoke(methodArgs.method, methodArgs.arguments);
+			result = invoke(getHandler(serviceName), methodArgs.method, methodArgs.arguments);
 		} catch (Throwable e) {
 			thrown = e;
 		}
@@ -430,10 +434,44 @@ public class JsonRpcServer {
 	}
 
 	/**
+	 * Get the service name from the methodNode.  In this class, it is always
+	 * <code>null</code>.  Subclasses may parse the methodNode for service name.
+	 *
+	 * @param methodNode the JsonNode for the method
+	 * @return the name of the service, or <code>null</code>
+	 */
+	protected String getServiceName(JsonNode methodNode) {
+		return null;
+	}
+
+	/**
+	 * Get the method name from the methodNode.
+	 *
+	 * @param methodNode the JsonNode for the method
+	 * @return the name of the method that should be invoked
+	 */
+	protected String getMethodName(JsonNode methodNode) {
+		return (methodNode!=null && !methodNode.isNull()) ? methodNode.asText() : null;
+	}
+
+	/**
+	 * Get the handler (object) that should be invoked to execute the specified
+	 * RPC method.  Used by subclasses to return handlers specific to a service.
+	 *
+	 * @param serviceName an optional service name
+	 * @return the handler to invoke the RPC call against
+	 */
+	protected Object getHandler(String serviceName) {
+		return handler;
+	}
+
+	/**
 	 * Invokes the given method on the {@code handler} passing
 	 * the given params (after converting them to beans\objects)
 	 * to it.
 	 *
+	 * @param an optional service name used to locate the target object
+	 *  to invoke the Method on
 	 * @param m the method to invoke
 	 * @param params the params to pass to the method
 	 * @return the return value (or null if no return)
@@ -441,7 +479,7 @@ public class JsonRpcServer {
 	 * @throws IllegalAccessException on error
 	 * @throws InvocationTargetException on error
 	 */
-	protected JsonNode invoke(Method m, List<JsonNode> params)
+	protected JsonNode invoke(Object target, Method m, List<JsonNode> params)
 		throws IOException,
 		IllegalAccessException,
 		InvocationTargetException {
@@ -462,7 +500,7 @@ public class JsonRpcServer {
 		}
 
 		// invoke the method
-		Object result = m.invoke(handler, convertedParams);
+		Object result = m.invoke(target, convertedParams);
 		return (m.getGenericReturnType()!=null) ? mapper.valueToTree(result) : null;
 	}
 
