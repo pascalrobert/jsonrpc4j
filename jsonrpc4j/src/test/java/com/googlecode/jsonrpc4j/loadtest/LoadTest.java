@@ -30,7 +30,7 @@ public class LoadTest {
 				JsonRpcService.class.getClassLoader(), JsonRpcService.class,
 				jsonRpcHttpClient);
 
-		for (int i = 0; i < 70000; i++) {
+		for (int i = 0; i < 700; i++) {
 			service.doSomething();
 		}
 	}
