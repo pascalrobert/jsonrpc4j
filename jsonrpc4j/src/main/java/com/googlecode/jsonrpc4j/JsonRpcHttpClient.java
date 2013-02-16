@@ -1,6 +1,8 @@
 package com.googlecode.jsonrpc4j;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
@@ -21,10 +23,10 @@ public class JsonRpcHttpClient
 
 	private URL serviceUrl;
 
-	private Proxy connectionProxy 		= Proxy.NO_PROXY;
-	private int connectionTimeoutMillis	= 60*1000;
-	private int readTimeoutMillis		= 60*1000*2;
-	private Map<String, String> headers	= new HashMap<String, String>();
+	private Proxy connectionProxy 			= Proxy.NO_PROXY;
+	private int connectionTimeoutMillis	= 60 * 1000;
+	private int readTimeoutMillis			= 60 * 1000 * 2;
+	private Map<String, String> headers		= new HashMap<String, String>();
 
 	/**
 	 * Creates the {@link JsonRpcHttpClient} bound to the given {@code serviceUrl}.
@@ -133,10 +135,20 @@ public class JsonRpcHttpClient
 		HttpURLConnection con = openConnection(extraHeaders);
 
 		// invoke it
-		super.invoke(methodName, argument, con.getOutputStream());
+		OutputStream ops = con.getOutputStream();
+		try {
+			super.invoke(methodName, argument, ops);
+		} finally {
+			ops.close();
+		}
 
 		// read and return value
-		return super.readResponse(returnType, con.getInputStream());
+		InputStream ips = con.getInputStream();
+		try {
+			return super.readResponse(returnType, ips);
+		} finally {
+			ips.close();
+		}
 	}
 
 	/**
