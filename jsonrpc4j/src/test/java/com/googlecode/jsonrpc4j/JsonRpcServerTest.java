@@ -382,6 +382,17 @@ public class JsonRpcServerTest {
 		assertTrue(json.get("id").isNull());
 	}
 
+	@Test
+	public void callParseErrorJson() throws Exception {
+		jsonRpcServerAnnotatedParam.handle(new ClassPathResource(
+				"jsonRpcParseErrorTest.json").getInputStream(), baos);
+
+		String response = baos.toString(JSON_ENCODING);
+		JsonNode json = mapper.readTree(response);
+
+		// Invalid parameters
+		assertEquals(-32700, json.get("error").get("code").asInt());
+	}
 
 	// Service and service interfaces used in test
 	

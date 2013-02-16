@@ -29,6 +29,7 @@ import javax.portlet.ResourceResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -217,7 +218,15 @@ public class JsonRpcServer {
 	 */
 	public void handle(InputStream ips, OutputStream ops)
 		throws IOException {
-		handleNode(mapper.readTree(new NoCloseInputStream(ips)), ops);
+		JsonNode jsonNode = null;
+		try {
+			jsonNode = mapper.readTree(new NoCloseInputStream(ips));
+		} catch (JsonParseException e) {
+			writeAndFlushValue(ops, createErrorResponse(
+				"jsonrpc", "null", -32700, "Parse error", null));
+			return;
+		}
+		handleNode(jsonNode, ops);
 	}
 
 	/**
