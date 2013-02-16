@@ -39,6 +39,8 @@ public class ServerClientTest {
 	@Before
 	public void setUp()
 		throws Exception {
+		cl = ClassLoader.getSystemClassLoader();
+
 		ConsoleHandler handler = new ConsoleHandler();
 		handler.setLevel(Level.ALL);
 		Logger.getLogger("").addHandler(handler);
