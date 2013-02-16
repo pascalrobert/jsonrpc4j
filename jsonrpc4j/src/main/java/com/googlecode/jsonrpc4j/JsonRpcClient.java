@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
@@ -366,13 +367,28 @@ public class JsonRpcClient {
 		if (arguments!=null && arguments.getClass().isArray()) {
 			Object[] args = Object[].class.cast(arguments);
 			if (args.length>0) {
-				request.put("params", mapper.valueToTree(Object[].class.cast(arguments)));
+				// serialize every param for itself so jackson can determine
+				// right serializer
+				ArrayNode paramsNode = new ArrayNode(mapper.getNodeFactory());
+				for (Object arg : args) {
+					JsonNode argNode = mapper.valueToTree(arg);
+					paramsNode.add(argNode);
+				}
+				request.put("params", paramsNode);
 			}
 		
 		// collection args
 		} else if (arguments!=null && Collection.class.isInstance(arguments)) {
-			if (!Collection.class.cast(arguments).isEmpty()) {
-				request.put("params", mapper.valueToTree(arguments));
+			Collection<?> args = Collection.class.cast(arguments);
+			if (!args.isEmpty()) {
+				// serialize every param for itself so jackson can determine
+				// right serializer
+				ArrayNode paramsNode = new ArrayNode(mapper.getNodeFactory());
+				for (Object arg : args) {
+					JsonNode argNode = mapper.valueToTree(arg);
+					paramsNode.add(argNode);
+				}
+				request.put("params", paramsNode);
 			}
 			
 		// map args
