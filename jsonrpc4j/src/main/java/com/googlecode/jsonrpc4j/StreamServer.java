@@ -207,16 +207,10 @@ public class StreamServer {
 
 			// keep handling requests
 			int errors = 0;
-			while (StreamServer.this.keepRunning.get() && clientSocket.isConnected()) {
-				
+			while (StreamServer.this.keepRunning.get()) {
 
 				// handle it
 				try {
-					if (input.available()==0) {
-						Thread.yield();
-						continue;
-					}
-
 					jsonRpcServer.handle(input, output);
 				} catch (Throwable t) {
 					errors++;
