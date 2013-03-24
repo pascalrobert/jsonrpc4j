@@ -12,6 +12,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -23,10 +27,12 @@ public class JsonRpcHttpClient
 
 	private URL serviceUrl;
 
-	private Proxy connectionProxy 			= Proxy.NO_PROXY;
-	private int connectionTimeoutMillis	= 60 * 1000;
-	private int readTimeoutMillis			= 60 * 1000 * 2;
-	private Map<String, String> headers		= new HashMap<String, String>();
+	private Proxy connectionProxy 				= Proxy.NO_PROXY;
+	private int connectionTimeoutMillis		= 60 * 1000;
+	private int readTimeoutMillis				= 60 * 1000 * 2;
+	private SSLContext sslContext 				= null;
+	private HostnameVerifier hostNameVerifier 	= null;
+	private Map<String, String> headers			= new HashMap<String, String>();
 
 	/**
 	 * Creates the {@link JsonRpcHttpClient} bound to the given {@code serviceUrl}.
@@ -132,7 +138,8 @@ public class JsonRpcHttpClient
 		throws Throwable {
 
 		// create URLConnection
-		HttpURLConnection con = openConnection(extraHeaders);
+		HttpURLConnection con = prepareConnection(extraHeaders);
+		con.connect();
 
 		// invoke it
 		OutputStream ops = con.getOutputStream();
@@ -172,12 +179,12 @@ public class JsonRpcHttpClient
 	}
 
 	/**
-	 * Opens a connection to the server.
+	 * Prepares a connection to the server.
 	 * @param extraHeaders extra headers to add to the request
-	 * @return the connection
+	 * @return the unopened connection
 	 * @throws IOException 
 	 */
-	private HttpURLConnection openConnection(Map<String, String> extraHeaders)
+	protected HttpURLConnection prepareConnection(Map<String, String> extraHeaders)
 		throws IOException {
 		
 		// create URLConnection
@@ -192,6 +199,17 @@ public class JsonRpcHttpClient
 		con.setInstanceFollowRedirects(true);
 		con.setRequestMethod("POST");
 
+		// do stuff for ssl
+		if (HttpsURLConnection.class.isInstance(con)) {
+			HttpsURLConnection https = HttpsURLConnection.class.cast(con);
+			if (hostNameVerifier != null) {
+				https.setHostnameVerifier(hostNameVerifier);
+			}
+			if (sslContext != null) {
+				https.setSSLSocketFactory(sslContext.getSocketFactory());
+			}
+		}
+
 		// add headers
 		for (Entry<String, String> entry : headers.entrySet()) {
 			con.setRequestProperty(entry.getKey(), entry.getValue());
@@ -200,9 +218,6 @@ public class JsonRpcHttpClient
 			con.setRequestProperty(entry.getKey(), entry.getValue());
 		}
 		con.setRequestProperty("Content-Type", "application/json-rpc");
-
-		// open the connection
-		con.connect();
 
 		// return it
 		return con;
@@ -277,6 +292,20 @@ public class JsonRpcHttpClient
 	public void setHeaders(Map<String, String> headers) {
 		this.headers.clear();
 		this.headers.putAll(headers);
+	}
+
+	/**
+	 * @param sslContext the sslContext to set
+	 */
+	public void setSslContext(SSLContext sslContext) {
+		this.sslContext = sslContext;
+	}
+
+	/**
+	 * @param hostNameVerifier the hostNameVerifier to set
+	 */
+	public void setHostNameVerifier(HostnameVerifier hostNameVerifier) {
+		this.hostNameVerifier = hostNameVerifier;
 	}
 
 }
