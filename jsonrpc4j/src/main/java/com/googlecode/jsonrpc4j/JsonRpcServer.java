@@ -433,8 +433,8 @@ public class JsonRpcServer {
 
 		// log and potentially re-throw errors
 		if (thrown!=null) {
-			if (LOGGER.isLoggable(Level.SEVERE)) {
-				LOGGER.log(Level.SEVERE, "Error in JSON-RPC Service", thrown);
+			if (LOGGER.isLoggable(Level.WARNING)) {
+				LOGGER.log(Level.WARNING, "Error in JSON-RPC Service", thrown);
 			}
 			if (rethrowExceptions) {
 				throw new RuntimeException(thrown);
