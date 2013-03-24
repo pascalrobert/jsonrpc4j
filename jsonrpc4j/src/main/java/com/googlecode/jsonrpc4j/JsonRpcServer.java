@@ -64,6 +64,7 @@ public class JsonRpcServer {
 	private ObjectMapper mapper;
 	private Object handler;
 	private Class<?> remoteInterface;
+	private Level exceptionLogLevel = Level.WARNING;
 
 	static {
 		ClassLoader classLoader = JsonRpcServer.class.getClassLoader();
@@ -433,8 +434,8 @@ public class JsonRpcServer {
 
 		// log and potentially re-throw errors
 		if (thrown!=null) {
-			if (LOGGER.isLoggable(Level.WARNING)) {
-				LOGGER.log(Level.WARNING, "Error in JSON-RPC Service", thrown);
+			if (LOGGER.isLoggable(exceptionLogLevel)) {
+				LOGGER.log(exceptionLogLevel, "Error in JSON-RPC Service", thrown);
 			}
 			if (rethrowExceptions) {
 				throw new RuntimeException(thrown);
@@ -1014,6 +1015,13 @@ public class JsonRpcServer {
 	 */
 	public void setErrorResolver(ErrorResolver errorResolver) {
 		this.errorResolver = errorResolver;
+	}
+
+	/**
+	 * @param exceptionLogLevel the exceptionLogLevel to set
+	 */
+	public void setExceptionLogLevel(Level exceptionLogLevel) {
+		this.exceptionLogLevel = exceptionLogLevel;
 	}
 
 }
