@@ -97,6 +97,9 @@ public abstract class ProxyUtil {
 			public Object invoke(Object proxy, Method method, Object[] args)
 				throws Throwable {
 				Class<?> clazz = method.getDeclaringClass();
+				if (clazz == Object.class) {
+					return proxyObjectMethods(method, proxy, args);
+				}
 				return method.invoke(serviceMap.get(clazz), args);
 			}
 		});
@@ -151,6 +154,9 @@ public abstract class ProxyUtil {
 			new InvocationHandler() {
 				public Object invoke(Object proxy, Method method, Object[] args)
 					throws Throwable {
+					if (method.getDeclaringClass() == Object.class) {
+						return proxyObjectMethods(method, proxy, args);
+					}
 					Object arguments = ReflectionUtil.parseArguments(method, args, useNamedParams);
 					return client.invokeAndReadResponse(
 						method.getName(), arguments, method.getGenericReturnType(), ops, ips);
@@ -183,6 +189,9 @@ public abstract class ProxyUtil {
 			new InvocationHandler() {
 				public Object invoke(Object proxy, Method method, Object[] args)
 					throws Throwable {
+					if (method.getDeclaringClass() == Object.class) {
+						return proxyObjectMethods(method, proxy, args);
+					}
 					Object arguments = ReflectionUtil.parseArguments(method, args, useNamedParams);
 					return client.invoke(
 						method.getName(), arguments, method.getGenericReturnType(), extraHeaders);
@@ -206,4 +215,17 @@ public abstract class ProxyUtil {
 		return createClientProxy(classLoader, proxyInterface, false, client, new HashMap<String, String>());
 	}
 
+	private static Object proxyObjectMethods(Method method, Object proxyObject, Object[] args) {
+		String name = method.getName();
+		if (name.equals("toString")) {
+			return proxyObject.getClass().getName() + "@" + System.identityHashCode(proxyObject);
+		}
+		if (name.equals("hashCode")) {
+			return System.identityHashCode(proxyObject);
+		}
+		if (name.equals("equals")) {
+			return proxyObject == args[0];
+		}
+		throw new RuntimeException(method.getName() + " is not a member of java.lang.Object");
+	}
 }

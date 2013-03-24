@@ -1,5 +1,6 @@
 package com.googlecode.jsonrpc4j.spring;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -82,6 +83,12 @@ public class JsonProxyFactoryBean
 	 */
 	public Object invoke(MethodInvocation invocation)
 		throws Throwable {
+
+		// handle toString()
+		Method method = invocation.getMethod();
+		if (method.getDeclaringClass() == Object.class && method.getName().equals("toString")) {
+			return proxyObject.getClass().getName() + "@" + System.identityHashCode(proxyObject);
+		}
 
 		// get return type
 		Type retType = (invocation.getMethod().getGenericReturnType() != null)

@@ -89,7 +89,52 @@ public class ServerClientTest {
 		clientService.noOp();
 		assertEquals("world", clientService.hello());
 		assertEquals("uranus", clientService.hello("uranus"));
+
+		// call non-rpc methods
+		assertNotNull(clientService.toString());
+		assertTrue(clientService.equals(clientService));
+		assertFalse(clientService.equals(null));
+		clientService.hashCode();
 	}
+
+	@Test
+	public void testAllMethodsViaCompositeProxy()
+			throws Throwable {
+
+		// create client service
+		Service clientService = ProxyUtil.createClientProxy(
+				cl, Service.class, false, jsonRpcClient,
+				clientInputStream,
+				clientOutputStream);
+
+		Object compositeService = ProxyUtil.createCompositeServiceProxy(
+				cl,
+				new Object[] { clientService },
+				new Class<?>[] { Service.class },
+				true);
+
+		clientService = (Service) compositeService;
+
+		mockCtx.checking(new Expectations() {{
+			one(serviceMock).noOp();
+			one(serviceMock).hello();
+			will(returnValue("world"));
+			one(serviceMock).hello(with("uranus"));
+			will(returnValue("uranus"));
+		}});
+
+		// call it
+		clientService.noOp();
+		assertEquals("world", clientService.hello());
+		assertEquals("uranus", clientService.hello("uranus"));
+
+		// call non-rpc methods
+		clientService.hashCode();
+		assertTrue(clientService.equals(clientService));
+		assertFalse(clientService.equals(null));
+		assertNotNull(clientService.toString());
+	}
+
 
 	@Test
 	public void testException()
